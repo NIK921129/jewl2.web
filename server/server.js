@@ -53,6 +53,14 @@ mongoose
     app.listen(PORT, () => console.log(`🚀 API running on port ${PORT}`));
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err.message);
+    console.error("❌ MongoDB connection failed.");
+    if (err.message.includes("querySrv ENOTFOUND") || err.message.includes("queryTxt ENOTFOUND")) {
+      console.error("   Hint: Check if the MONGODB_URI is correct. It seems there was a DNS resolution issue.");
+    } else if (err.message.includes("bad auth") || err.message.includes("Authentication failed")) {
+      console.error("   Hint: Check your username and password in the MONGODB_URI.");
+    } else if (err.message.includes("closed") || err.message.includes("connect ETIMEDOUT")) {
+      console.error("   Hint: The most common cause for this is the MongoDB Atlas IP Access List. Make sure your server's IP address (or 0.0.0.0/0 for 'anywhere') is added.");
+    }
+    console.error("   Full error:", err.message);
     process.exit(1);
   });
