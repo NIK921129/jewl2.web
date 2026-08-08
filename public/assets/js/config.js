@@ -7,7 +7,7 @@ window.NOVA_CONFIG = {
   // e.g. "https://nova-store-api.onrender.com/api"
   API_BASE_URL: "https://jewl2-web.onrender.com/api",
   CURRENCY: "\u20B9",
-  STORE_NAME: "GIVA",
+  STORE_NAME: "NOVA",
   // When the API is unreachable the site runs on built-in demo data
   ALLOW_DEMO_FALLBACK: true,
 };
