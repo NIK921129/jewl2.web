@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NOVA Admin — Store Control Center</title>
+<meta name="description" content="Admin control center for the NOVA store: orders, products, customers, coupons, statistics and data exports." />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/favicon.ico" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+
+<!-- LOGIN GATE (same login/signup form as the store) -->
+<div id="gate" style="min-height:100vh;display:grid;place-items:center;padding:20px">
+  <div class="modal-card" style="width:min(420px,100%)">
+    <div class="logo" style="margin-bottom:6px"><i></i>NOVA Admin</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:18px">Sign in with your admin id and password.</p>
+    <div class="tabs"><button class="active" data-tab="login">Login</button><button data-tab="signup">Sign up</button></div>
+    <form id="gateForm">
+      <label class="field" id="gName" style="display:none"><span>Full name</span><input class="input" name="name" /></label>
+      <label class="field"><span>Email / Admin ID</span><input class="input" name="email" required placeholder="admin" /></label>
+      <label class="field"><span>Password</span><input class="input" name="password" type="password" required /></label>
+      <button class="btn btn-primary btn-block" id="gateBtn">Login</button>
+    </form>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px">Credentials are configured in your environment variables (ADMIN_ID / ADMIN_PASSWORD).</p>
+    <a class="btn btn-ghost btn-block" style="margin-top:10px" href="/">← Back to store</a>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div class="admin hide" id="app">
+  <aside class="side" id="side">
+    <div class="logo"><i></i>NOVA Admin</div>
+    <nav id="menu">
+      <div class="group">Overview</div>
+      <a data-page="dashboard" class="active">📊 Dashboard</a>
+      <a data-page="analytics">📈 Statistics</a>
+      <div class="group">Catalogue</div>
+      <a data-page="products">📦 Products</a>
+      <a data-page="addproduct">➕ Add product</a>
+      <a data-page="inventory">🏷️ Inventory &amp; stock</a>
+      <a data-page="reviews">⭐ Reviews</a>
+      <div class="group">Sales</div>
+      <a data-page="orders">🧾 Orders</a>
+      <a data-page="coupons">🎟️ Coupons</a>
+      <div class="group">People</div>
+      <a data-page="users">👥 Customers &amp; IDs</a>
+      <a data-page="bags">🛍️ Bag lists</a>
+      <a data-page="messages">✉️ Messages</a>
+      <div class="group">System</div>
+      <a data-page="exports">⬇️ Data export</a>
+      <a data-page="settings">⚙️ Settings</a>
+      <a id="logout">🚪 Log out</a>
+      <a href="/">🏬 View store</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="main-head">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="icon-btn burger" id="burger">☰</button>
+        <div><h1 id="pageTitle">Dashboard</h1><p style="color:var(--muted);font-size:13px" id="pageSub">Live store overview</p></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="icon-btn" id="themeBtn2">◐</button>
+        <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ Refresh</button>
+        <span class="pill paid" id="whoami">admin</span>
+      </div>
+    </div>
+    <div id="page"></div>
+  </main>
+</div>
+
+<div class="modal" id="adminModal"><div class="modal-card" id="adminModalBody"></div></div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/admin.js"></script>
+</body>
+</html>
