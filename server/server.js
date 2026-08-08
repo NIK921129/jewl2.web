@@ -14,7 +14,7 @@ app.use(
   })
 );
 
-app.get("/", (_req, res) => res.json({ name: "NOVA Store API", status: "running" }));
+app.get("/", (_req, res) => res.json({ name: "GIVA Jewellery API", status: "running" }));
 app.use("/api", routes);
 app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
 
@@ -24,25 +24,25 @@ const MONGODB_URI = process.env.MONGODB_URI;
 async function seed() {
   if ((await Product.countDocuments()) > 0) return;
   const img = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
-  await Product.insertMany([
-    { title: "Aurora Wireless Headphones", category: "Audio", brand: "Nova", price: 4999, compareAtPrice: 7999, stock: 24, featured: true, rating: 4.8, image: img("1505740420928-5e560c06d30e"), description: "Active noise cancelling over-ear headphones with 40h battery life.", tags: ["audio", "wireless"] },
-    { title: "Pulse Smart Watch", category: "Wearables", brand: "Nova", price: 6499, compareAtPrice: 8999, stock: 18, featured: true, rating: 4.6, image: img("1523275335684-37898b6baf30"), description: "AMOLED display, heart-rate + SpO2, 7-day battery.", tags: ["watch"] },
-    { title: "Studio Mechanical Keyboard", category: "Computing", brand: "Keyz", price: 5799, stock: 12, rating: 4.7, image: img("1587829741301-dc798b83add3"), description: "Hot-swappable switches, RGB backlight, aluminium body." },
-    { title: "Nimbus Bluetooth Speaker", category: "Audio", brand: "Nova", price: 2999, compareAtPrice: 3999, stock: 40, featured: true, rating: 4.5, image: img("1608043152269-423dbba4e7e1"), description: "360° sound, IPX7 waterproof, 20h playtime." },
-    { title: "Vision 4K Action Camera", category: "Cameras", brand: "Vision", price: 11999, stock: 8, rating: 4.4, image: img("1526170375885-4d8ecf77b99f"), description: "4K60 stabilised video, waterproof to 30m." },
-    { title: "Feather Laptop Sleeve", category: "Accessories", brand: "Carry", price: 1299, stock: 60, rating: 4.3, image: img("1553062407-98eeb64c6a62"), description: "Water resistant 14\" sleeve with magnetic flap." },
-    { title: "Orbit Wireless Mouse", category: "Computing", brand: "Keyz", price: 1899, stock: 35, rating: 4.5, image: img("1527864550417-7fd91fc51a46"), description: "Silent clicks, 4000 DPI, USB-C rechargeable." },
-    { title: "Halo Desk Lamp", category: "Home", brand: "Lumen", price: 2499, stock: 22, rating: 4.6, image: img("1507473885765-e6ed057f782c"), description: "Dimmable LED lamp with wireless charging base." },
-    { title: "Trail Running Shoes", category: "Fashion", brand: "Stride", price: 3999, compareAtPrice: 5499, stock: 30, rating: 4.4, image: img("1542291026-7eec264c27ff"), description: "Lightweight grip sole for road and trail." },
-    { title: "Everyday Backpack 22L", category: "Accessories", brand: "Carry", price: 2799, stock: 27, featured: true, rating: 4.7, image: img("1553062407-98eeb64c6a62"), description: "Padded laptop bay, hidden pockets, rain cover." },
-    { title: "Ceramic Pour-Over Set", category: "Home", brand: "Brew", price: 1799, stock: 15, rating: 4.8, image: img("1495474472287-4d71bcdd2085"), description: "Hand-glazed dripper with borosilicate carafe." },
-    { title: "Zen Yoga Mat", category: "Fitness", brand: "Zen", price: 1499, stock: 44, rating: 4.2, image: img("1518611012118-696072aa579a"), description: "6mm non-slip TPE mat with carry strap." },
+  await Product.insertMany([ // GIVA-inspired seed data
+    { title: "Anushka Sharma Silver Zircon Star Necklace", category: "Necklaces", brand: "GIVA", price: 2499, compareAtPrice: 4999, stock: 30, featured: true, rating: 4.9, image: img("1611019345293-1c1b5932d4a0"), description: "Sterling silver necklace with zircon stars, inspired by timeless elegance. Perfect for any occasion.", tags: ["silver", "necklace", "zircon"] },
+    { title: "Golden Serene Heart Necklace", category: "Necklaces", brand: "GIVA", price: 1899, compareAtPrice: 3999, stock: 25, featured: true, rating: 4.8, image: img("1599454118285-a72a8d3f3c6e"), description: "A delicate golden heart pendant, symbolizing love and serenity. A perfect gift for your loved one.", tags: ["gold", "necklace", "heart"] },
+    { title: "Silver Zirconia Studs", category: "Earrings", brand: "GIVA", price: 1299, stock: 50, rating: 4.7, image: img("1606418833203-c0c94a6b5e6a"), description: "Classic silver studs with sparkling zirconia, an essential for every jewellery collection.", tags: ["earrings", "silver", "studs"] },
+    { title: "Rose Gold Flower Bracelet", category: "Bracelets", brand: "GIVA", price: 2199, compareAtPrice: 4299, stock: 20, featured: true, rating: 4.8, image: img("1615243242479-a0bba4430b03"), description: "An elegant rose gold bracelet featuring a delicate flower design. Adds a touch of grace to any outfit.", tags: ["bracelet", "rose gold", "flower"] },
+    { title: "Oxidised Silver Peacock Jhumkas", category: "Earrings", brand: "GIVA", price: 1799, stock: 40, rating: 4.6, image: img("1629056199383-6b54c438528f"), description: "Traditional oxidised silver jhumkas with an intricate peacock motif. A statement piece for ethnic wear.", tags: ["earrings", "oxidised", "jhumka"] },
+    { title: "Anushka Sharma Silver Royal Ring", category: "Rings", brand: "GIVA", price: 1599, stock: 60, rating: 4.7, image: img("1591121833933-308835c8ac8b"), description: "A majestic silver ring with a central stone, exuding royalty and charm.", tags: ["ring", "silver", "zircon"] },
+    { title: "Golden Layered Necklace", category: "Necklaces", brand: "GIVA", price: 2399, stock: 35, rating: 4.5, image: img("1613332054242-2b18433d3525"), description: "Trendy and chic, this golden layered necklace is perfect for a modern look.", tags: ["necklace", "gold", "layered"] },
+    { title: "Silver Minimalist Hoop Earrings", category: "Earrings", brand: "GIVA", price: 999, stock: 70, rating: 4.6, image: img("1612913529384-a9b3cce0b8be"), description: "Sleek and simple silver hoops for everyday elegance.", tags: ["earrings", "silver", "hoops"] },
+    { title: "Rose Gold Zircon Tennis Bracelet", category: "Bracelets", brand: "GIVA", price: 3499, compareAtPrice: 6999, stock: 15, featured: true, rating: 4.9, image: img("1615243242479-a0bba4430b03"), description: "A stunning rose gold tennis bracelet, fully studded with high-quality zircons.", tags: ["bracelet", "rose gold", "tennis"] },
+    { title: "Silver Solitaire Ring", category: "Rings", brand: "GIVA", price: 1999, stock: 45, rating: 4.8, image: img("1604543239221-38a6a090c58a"), description: "The classic solitaire ring in sterling silver. A timeless symbol of love and commitment.", tags: ["ring", "silver", "solitaire"] },
+    { title: "Golden Charm Bracelet", category: "Bracelets", brand: "GIVA", price: 1699, stock: 33, rating: 4.5, image: img("1613332054242-2b18433d3525"), description: "A playful golden bracelet with assorted charms. Personalize your style.", tags: ["bracelet", "gold", "charm"] },
+    { title: "Oxidised Silver Choker Necklace", category: "Necklaces", brand: "GIVA", price: 2999, stock: 22, rating: 4.7, image: img("1629056199383-6b54c438528f"), description: "A bold and beautiful oxidised silver choker for a bohemian look.", tags: ["necklace", "oxidised", "choker"] },
   ]);
   await Coupon.insertMany([
     { code: "WELCOME10", type: "percent", value: 10, minOrder: 0 },
     { code: "NOVA500", type: "flat", value: 500, minOrder: 2999 },
   ]);
-  console.log("✅ Seeded demo products and coupons");
+  console.log("✅ Seeded demo jewellery and coupons");
 }
 
 mongoose
