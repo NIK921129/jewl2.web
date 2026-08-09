@@ -56,6 +56,8 @@ const TITLES = {
   storefront: ["Storefront", "Customize homepage content"],
   orders: ["Orders", "Full order lifecycle management"],
   coupons: ["Coupons", "Discount codes and campaigns"],
+  payments: ["Payments", "Configure payment methods"],
+  approvals: ["Payment Approvals", "Verify manual payments"],
   chat: ["Live Chat", "Customer support chat widget"],
   users: ["Customers & IDs", "Create logins, reset passwords, block users"],
   bags: ["Bag lists", "What customers are carrying right now"],
@@ -298,7 +300,7 @@ RENDER.inventory = async () => {
 };
 
 /* ---- 6. orders ---- */
-const STATUSES = ["pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"];
+const STATUSES = ["awaiting_payment", "awaiting_approval", "pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"];
 RENDER.orders = async () => {
   const orders = await api("/admin/orders");
   $("#page").innerHTML = `
@@ -381,6 +383,52 @@ RENDER.coupons = async () => {
     toast("Coupon created"); go("coupons");
   };
   $$("[data-cdel]").forEach((b) => (b.onclick = async () => { await api("/admin/coupons/" + b.dataset.cdel, { method: "DELETE" }); go("coupons"); }));
+};
+
+/* ---- NEW: payments ---- */
+RENDER.payments = async () => {
+  const s = (await api("/admin/settings").then((res) => res.find((x) => x.key === "upi_id")?.value)) || "";
+  $("#page").innerHTML = `
+  <div class="panel" style="max-width:600px"><h3>UPI Payments</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:18px">
+      Enter your UPI ID. A QR code will be generated at checkout for customers to scan and pay.
+    </p>
+    <form id="upiForm">
+      <label class="field"><span>Your UPI ID</span><input class="input" name="upi_id" value="${esc(s)}" placeholder="your-name@bank" /></label>
+      <button class="btn btn-primary">Save UPI ID</button>
+    </form>
+  </div>`;
+  $("#upiForm").onsubmit = async (e) => { e.preventDefault(); const value = new FormData(e.target).get("upi_id"); await api("/admin/settings", { method: "PUT", body: { key: "upi_id", value } }); toast("UPI ID saved"); go("payments"); };
+};
+
+/* ---- NEW: approvals ---- */
+RENDER.approvals = async () => {
+  const orders = await api("/admin/orders/approvals");
+  $("#page").innerHTML = `<div class="panel"><h3>Awaiting Payment Approval (${orders.length})</h3>
+    ${orders.length ? orders.map((o) => `<div class="panel" style="background:var(--surface-2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><b>Order ${esc(o.orderNo)}</b> · ${money(o.total)}<br><span style="font-size:12px;color:var(--muted)">${esc(o.email)} · ${dt(o.createdAt)}</span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-primary" data-approve="${o._id}">Approve</button>
+          <button class="btn btn-sm btn-danger" data-reject="${o._id}">Reject</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <a href="${o.paymentScreenshot}" target="_blank"><img src="${o.paymentScreenshot}" style="max-height:200px;border-radius:4px;cursor:zoom-in" alt="Payment screenshot"></a>
+        <div style="font-size:13px;line-height:1.6">
+          <b>Shipping Address:</b><br>
+          ${Object.entries(o.shippingAddress || {}).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join("<br>") || "Not provided"}
+          ${o.notes ? `<div style="margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-1)">
+            <b>📌 Order Notes:</b><br>${esc(o.notes)}
+          </div>` : ""}
+        </div>
+      </div>
+    </div>`).join("") : '<div class="empty">No orders are awaiting payment approval.</div>'}
+  </div>`;
+  $$("[data-approve]").forEach((b) => (b.onclick = async () => { await api("/admin/orders/" + b.dataset.approve, { method: "PUT", body: { status: "paid" } }); toast("Payment approved"); go("approvals"); }));
+  $$("[data-reject]").forEach((b) => (b.onclick = async () => {
+    if (!confirm("Reject this payment? The order will be cancelled.")) return; await api("/admin/orders/" + b.dataset.reject, { method: "PUT", body: { status: "cancelled" } }); toast("Payment rejected"); go("approvals");
+  }));
 };
 
 /* ---- NEW: live chat ---- */

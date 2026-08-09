@@ -1,9 +1,11 @@
 // server/server.js — Express + MongoDB entry point (deploy on Render)
 require("dotenv").config();
 const express = require("express");
+const fs = require("fs");
 const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const routes = require("./routes");
@@ -16,6 +18,10 @@ app.use(
     origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()),
   })
 );
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+app.use("/uploads", express.static(uploadsDir));
 
 const server = http.createServer(app);
 const io = new Server(server, {

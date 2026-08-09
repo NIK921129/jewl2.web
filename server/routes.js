@@ -1,6 +1,8 @@
 // server/routes.js — every API route (public, customer, admin)
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 const { User, Product, Order, Coupon, Review, Message, Setting } = require("./models");
 
@@ -11,6 +13,15 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
 const CURRENCY = process.env.CURRENCY || "INR";
 const FREE_SHIPPING_OVER = Number(process.env.FREE_SHIPPING_OVER || 999);
 const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 49);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${req.params.id}-${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage });
 
 const sign = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 
@@ -56,6 +67,13 @@ router.get(
   "/settings/chat_widget",
   wrap(async (_req, res) => {
     res.json((await Setting.findOne({ key: "chat_widget" }))?.value || {});
+  })
+);
+
+router.get(
+  "/settings/upi",
+  wrap(async (_req, res) => {
+    res.json((await Setting.findOne({ key: "upi_id" }))?.value || "");
   })
 );
 
@@ -232,12 +250,27 @@ router.post(
       coupon,
       paymentMethod,
       shippingAddress,
-      status: "pending",
+      status: "awaiting_payment",
     });
     req.io.to("admins").emit("new_order", order);
     res.json(order);
   })
 );
+
+router.get(
+  "/orders/:id",
+  auth(true),
+  wrap(async (req, res) => {
+    const o = await Order.findOne({ _id: req.params.id, email: req.user.email });
+    if (!o) return res.status(404).json({ error: "Order not found" });
+    res.json(o);
+  })
+);
+
+router.post("/orders/:id/screenshot", auth(true), upload.single("screenshot"), wrap(async (req, res) => {
+  const o = await Order.findByIdAndUpdate(req.params.id, { paymentScreenshot: `/uploads/${req.file.filename}`, status: "awaiting_approval" }, { new: true });
+  res.json(o);
+}));
 
 router.get(
   "/orders/mine",
@@ -339,6 +372,10 @@ router.get("/admin/orders", adminOnly, wrap(async (req, res) => {
   if (q) f.$or = [{ orderNo: new RegExp(esc(q), "i") }, { email: new RegExp(esc(q), "i") }];
   res.json(await Order.find(f).sort({ createdAt: -1 }));
 }));
+router.get("/admin/orders/approvals", adminOnly, wrap(async (_req, res) => {
+  res.json(await Order.find({ status: "awaiting_approval" }).sort({ createdAt: -1 }));
+}));
+
 router.put("/admin/orders/:id", adminOnly, wrap(async (req, res) =>
   res.json(await Order.findByIdAndUpdate(req.params.id, clean(req.body), { new: true }))));
 router.delete("/admin/orders/:id", adminOnly, wrap(async (req, res) => {

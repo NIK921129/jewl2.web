@@ -54,11 +54,12 @@ const OrderSchema = new mongoose.Schema(
     paymentMethod: { type: String, default: "cod" },
     status: {
       type: String,
-      enum: ["pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"],
+      enum: ["awaiting_payment", "awaiting_approval", "pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"],
       default: "pending",
     },
     shippingAddress: { type: Object, default: {} },
     tracking: { type: String, default: "" },
+    paymentScreenshot: { type: String, default: "" },
     notes: { type: String, default: "" },
   },
   { timestamps: true }

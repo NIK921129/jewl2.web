@@ -340,43 +340,46 @@ function openCheckout() {
   if (!CART.length) return toast("Your bag is empty", "err");
   closeAll(); open$("#checkoutModal");
   const t = cartTotals();
-  $("#checkoutBody").innerHTML = `
-    <div class="modal-head"><div><h3>Checkout</h3><p>${CART.reduce((s, i) => s + i.qty, 0)} item(s) · ${money(t.total)}</p></div>
-      <button class="icon-btn" data-close>✕</button></div>
-    <form id="coForm">
-      <label class="field"><span>Full name</span><input class="input" name="name" required /></label>
-      <label class="field"><span>Phone</span><input class="input" name="phone" required /></label>
-      <label class="field"><span>Address</span><textarea class="input" name="address" required></textarea></label>
-      <div class="grid2">
-        <label class="field"><span>City</span><input class="input" name="city" required /></label>
-        <label class="field"><span>PIN code</span><input class="input" name="pin" required /></label>
-      </div>
-      <label class="field"><span>Payment method</span>
-        <select class="input" name="paymentMethod"><option value="cod">Cash on delivery</option><option value="upi">UPI</option><option value="card">Card</option></select></label>
-      <div class="sumline"><span>Subtotal</span><span>${money(t.subtotal)}</span></div>
-      ${t.discount ? `<div class="sumline"><span>Discount</span><span style="color:var(--brand)">−${money(t.discount)}</span></div>` : ""}
-      <div class="sumline"><span>Shipping</span><span>${t.shipping ? money(t.shipping) : "Free"}</span></div>
-      <div class="sumline total"><span>Pay</span><span>${money(t.total)}</span></div>
-      <button class="btn btn-primary btn-block">Place order</button>
-    </form>`;
+  const body = $("#checkoutBody");
+  body.innerHTML = `<div class="empty">Creating your order...</div>`;
   $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = closeAll));
-  $("#coForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const f = Object.fromEntries(new FormData(e.target));
-    const btn = e.target.querySelector("button"); btn.disabled = true; btn.textContent = "Placing order…";
-    try {
-      const order = await api("/orders", {
-        method: "POST",
-        body: { items: CART.map((c) => ({ productId: c.productId, qty: c.qty })), coupon: COUPON?.code || "", paymentMethod: f.paymentMethod, shippingAddress: f },
-      });
-      CART = []; COUPON = null; persistCart();
-      $("#checkoutBody").innerHTML = `<div class="empty"><div style="font-size:44px">✅</div><h3>Order placed!</h3>
-        <p style="margin:8px 0 4px">Order <b class="mono">${esc(order.orderNo)}</b> · ${money(order.total)}</p>
-        <p>We'll email tracking details shortly.</p>
-        <button class="btn btn-primary" style="margin-top:16px" data-close>Done</button></div>`;
-      $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = () => { closeAll(); loadProducts(); }));
-    } catch (err) { toast(err.message, "err"); btn.disabled = false; btn.textContent = "Place order"; }
-  };
+  try {
+    const order = await api("/orders", { method: "POST", body: { items: CART.map((c) => ({ productId: c.productId, qty: c.qty })), coupon: COUPON?.code || "" } });
+    const upiId = await api("/settings/upi");
+    if (!upiId) throw new Error("UPI payment is not configured by the store owner.");
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${upiId}&pn=NOVA%20Store&am=${order.total}&tn=Order%20${order.orderNo}`;
+    body.innerHTML = `
+      <div class="modal-head"><div><h3>Complete your payment</h3><p>Order ${esc(order.orderNo)} · ${money(order.total)}</p></div><button class="icon-btn" data-close>✕</button></div>
+      <div style="text-align:center">
+        <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Scan the QR code with any UPI app.</p>
+        <img src="${qrUrl}" alt="UPI QR Code" style="border-radius:8px; background:white; padding:10px;" />
+        <p style="font-size:13px;color:var(--muted);margin-top:8px">or pay to <b class="mono">${esc(upiId)}</b></p>
+      </div>
+      <form id="ssForm" style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
+        <p style="font-size:14px;margin-bottom:12px">After paying, upload the confirmation screenshot to complete your order.</p>
+        <label class="field"><span>Payment screenshot *</span><input class="input" name="screenshot" type="file" accept="image/*" required /></label>
+        <button class="btn btn-primary btn-block">Confirm payment</button>
+      </form>`;
+    $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = closeAll));
+    $("#ssForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      if (!f.get("screenshot").size) return toast("Please upload a screenshot", "err");
+      const btn = e.target.querySelector("button"); btn.disabled = true; btn.textContent = "Uploading...";
+      try {
+        await api(`/orders/${order._id}/screenshot`, { method: "POST", body: f });
+        CART = []; COUPON = null; persistCart();
+        body.innerHTML = `<div class="empty"><div style="font-size:44px">✅</div><h3>Order placed!</h3>
+          <p style="margin:8px 0 4px">Order <b class="mono">${esc(order.orderNo)}</b> · ${money(order.total)}</p>
+          <p>We've received your payment proof and will verify it shortly. You'll get an email once it's approved.</p>
+          <button class="btn btn-primary" style="margin-top:16px" data-close>Done</button></div>`;
+        $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = () => { closeAll(); loadProducts(); }));
+      } catch (err) { toast(err.message, "err"); btn.disabled = false; btn.textContent = "Confirm payment"; }
+    };
+  } catch (err) {
+    body.innerHTML = `<div class="empty">${esc(err.message)}<br><br><button class="btn btn-ghost" data-close>Close</button></div>`;
+    $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = closeAll));
+  }
 }
 
 /* --------------------------- modal utils --------------------------- */
