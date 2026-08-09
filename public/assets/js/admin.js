@@ -577,21 +577,30 @@ function save(text, name, mime) {
 RENDER.settings = async () => {
   $("#page").innerHTML = `
   <div class="grid2">
-    <div class="panel"><h3>Connection</h3>
+    <div class="panel"><h3>API Connection</h3>
       <div class="rowline"><span>API base url</span><span class="mono">${esc(CFG.API_BASE_URL)}</span></div>
       <div class="rowline"><span>Mode</span>${isDemo() ? '<span class="pill pending">Demo (offline data)</span>' : '<span class="pill paid">Live API</span>'}</div>
       <div class="rowline"><span>Signed in as</span><b>${esc((auth.user() || {}).email)}</b></div>
-      <p style="color:var(--muted);font-size:13px;margin-top:10px">Change the API url in <span class="mono">public/assets/js/config.js</span>, and backend keys in <span class="mono">server/.env</span>.</p>
+      <button class="btn btn-sm btn-ghost" id="healthCheck" style="margin-top:10px">Check API health</button>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">If the site is in Demo Mode, it means the backend at the API URL is not reachable. Check your Render deployment logs.</p>
     </div>
     <div class="panel"><h3>Environment variables checklist</h3>
       ${["MONGODB_URI", "JWT_SECRET", "ADMIN_ID", "ADMIN_PASSWORD", "CURRENCY", "SHIPPING_FEE", "FREE_SHIPPING_OVER", "CORS_ORIGIN", "PORT"]
         .map((k) => `<div class="rowline"><span class="mono">${k}</span><span class="pill processing">server/.env</span></div>`).join("")}
     </div>
   </div>
-  <div class="panel"><h3>Danger zone</h3>
+  <div class="panel"><h3>System</h3>
     <div class="rowline"><span>Reset local demo data</span><button class="btn btn-sm btn-danger" id="resetDemo">Reset</button></div>
   </div>`;
   $("#resetDemo").onclick = () => { store.del("demo_db"); toast("Demo data reset"); go("dashboard"); };
+  $("#healthCheck").onclick = async () => {
+    try {
+      const data = await api("/health");
+      toast(`API is healthy! Server time: ${new Date(data.time).toLocaleTimeString()}`, "ok");
+    } catch (e) {
+      toast(`API is unreachable. Error: ${e.message}`, "err");
+    }
+  };
 };
 
 /* ============================ ui utils ============================ */
