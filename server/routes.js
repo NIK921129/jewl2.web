@@ -227,6 +227,7 @@ router.post(
       shippingAddress,
       status: "pending",
     });
+    req.io.to("admins").emit("new_order", order);
     res.json(order);
   })
 );

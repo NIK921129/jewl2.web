@@ -1,10 +1,13 @@
 // server/server.js — Express + MongoDB entry point (deploy on Render)
 require("dotenv").config();
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 const routes = require("./routes");
-const { Product, Coupon } = require("./models");
+const { Product, Coupon, Setting } = require("./models");
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -13,6 +16,27 @@ app.use(
     origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()),
   })
 );
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()) },
+});
+
+// Middleware to pass io instance to routes
+app.use((req, _res, next) => {
+  req.io = io;
+  next();
+});
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(); // allow non-auth connections
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET || "change_me_secret");
+    if (user.role === "admin") socket.join("admins");
+  } catch (e) { console.error("Socket auth error:", e.message); }
+  next();
+});
 
 app.get("/", (_req, res) => res.json({ name: "NOVA Store API", status: "running" }));
 app.use("/api", routes);
@@ -50,7 +74,7 @@ mongoose
   .then(async () => {
     console.log("✅ MongoDB connected");
     await seed();
-    app.listen(PORT, () => console.log(`🚀 API running on port ${PORT}`));
+    server.listen(PORT, () => console.log(`🚀 API running on port ${PORT}`));
   })
   .catch((err) => {
     console.error("❌ MongoDB connection failed.");

@@ -42,6 +42,7 @@ function boot() {
     document.documentElement.dataset.theme = t; store.set("theme", t);
   };
   $("#adminModal").onclick = (e) => e.target.id === "adminModal" && closeModal();
+  connectSocket();
   go("dashboard");
 }
 
@@ -70,6 +71,18 @@ async function go(p) {
   $("#side").classList.remove("open");
   $("#page").innerHTML = '<div class="empty">Loading…</div>';
   try { await RENDER[p](); } catch (e) { $("#page").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+function connectSocket() {
+  const socket = io(API.replace("/api", ""), { auth: { token: auth.token() } });
+  socket.on("connect", () => console.log("Live socket connected"));
+  socket.on("new_order", (order) => {
+    toast(`📦 New order #${order.orderNo} for ${money(order.total)}`);
+    if (PAGE === "dashboard" || PAGE === "orders") {
+      STATS = null; CACHE.products = null; // Invalidate cache
+      go(PAGE);
+    }
+  });
 }
 
 /* ============================ pages ============================ */
