@@ -166,9 +166,16 @@ async function openProduct(id) {
     $("#prodBody").innerHTML = `
       <div class="modal-head"><div><h3>${esc(p.title)}</h3><p>${esc(p.category)} · ${esc(p.brand || "NOVA")}</p></div>
       <button class="icon-btn" data-close>✕</button></div>
-      <div class="detail">
-        <img src="${esc(p.image)}" alt="${esc(p.title)}" />
-        <div>
+      <div class="detail"> 
+        <div class="gallery">
+          <img id="mainImg" src="${esc(p.image)}" alt="${esc(p.title)}" />
+          <div class="thumbs">
+            ${[p.image, ...(p.gallery || [])].map(img => 
+              `<img src="${esc(img)}" class="${img === p.image ? 'active' : ''}" onclick="document.getElementById('mainImg').src=this.src; $$('.thumbs img').forEach(i=>i.classList.remove('active')); this.classList.add('active');" />`
+            ).join("")}
+          </div>
+        </div>
+        <div class="info">
           <div class="stars">${stars(p.rating)} <span style="color:var(--muted)">${p.rating} · ${p.reviewsCount || reviews.length} reviews</span></div>
           <div class="price-row" style="margin:12px 0">
             <span class="price" style="font-size:26px">${money(p.price)}</span>

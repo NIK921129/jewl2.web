@@ -210,7 +210,7 @@ function productForm(p, inline = false) {
         <label class="field"><span>Stock</span><input class="input" name="stock" type="number" value="${p?.stock ?? 0}" /></label>
         <label class="field"><span>Rating</span><input class="input" name="rating" type="number" step="0.1" max="5" value="${p?.rating ?? 4.5}" /></label>
       </div>
-      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(p?.image || "")}" placeholder="https://…" /></label>
+      <label class="field"><span>Image URLs (one per line)</span><textarea class="input" name="images" rows="4" placeholder="https://… (main image)\nhttps://… (gallery image)">${esc([p?.image, ...(p?.gallery || [])].filter(Boolean).join("\n"))}</textarea></label>
       <label class="field"><span>Description</span><textarea class="input" name="description">${esc(p?.description || "")}</textarea></label>
       <label class="field"><span>Tags (comma separated)</span><input class="input" name="tags" value="${esc((p?.tags || []).join(", "))}" /></label>
       <div style="display:flex;gap:18px;margin:10px 0 18px;font-size:14px">
@@ -224,14 +224,18 @@ function productForm(p, inline = false) {
   $("#pf").onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
+    const images = (f.images || "").split("\n").map(s => s.trim()).filter(Boolean);
     const body = {
       ...f,
+      image: images[0] || "",
+      gallery: images.slice(1),
       price: +f.price,
       compareAtPrice: +f.compareAtPrice,
       stock: +f.stock,
       rating: +f.rating,
       tags: f.tags ? f.tags.split(",").map((t) => t.trim()) : [], featured: !!f.featured, active: !!f.active
     };
+    delete body.images;
     try {
       if (p) await api("/admin/products/" + p._id, { method: "PUT", body });
       else await api("/admin/products", { method: "POST", body });
