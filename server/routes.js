@@ -52,7 +52,6 @@ const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* ---------------------------------- meta --------------------------------- */
 router.get("/health", (_req, res) => res.json({ ok: true, time: new Date() }));
-router.get("/health", (_req, res) => res.json({ ok: true, time: new Date() }));
 router.get("/config", (_req, res) =>
   res.json({ currency: CURRENCY, freeShippingOver: FREE_SHIPPING_OVER, shippingFee: SHIPPING_FEE })
 );
