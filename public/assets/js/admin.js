@@ -52,6 +52,7 @@ const TITLES = {
   addproduct: ["Add product", "Create a new catalogue entry"],
   inventory: ["Inventory & stock", "Bulk stock and price tools"],
   reviews: ["Reviews", "Moderate customer feedback"],
+  storefront: ["Storefront", "Customize homepage content"],
   orders: ["Orders", "Full order lifecycle management"],
   coupons: ["Coupons", "Discount codes and campaigns"],
   users: ["Customers & IDs", "Create logins, reset passwords, block users"],
@@ -216,6 +217,34 @@ function productForm(p, inline = false) {
     } catch (err) { toast(err.message, "err"); }
   };
 }
+
+/* ---- NEW: storefront ---- */
+RENDER.storefront = async () => {
+  const s = await api("/settings/storefront");
+  $("#page").innerHTML = `
+  <div class="panel" style="max-width:820px"><h3>Hero section</h3>
+    <form id="sf">
+      <label class="field"><span>Pill text</span><input class="input" name="pill" value="${esc(s.pill || "New season drop")}" /></label>
+      <label class="field"><span>Headline</span><textarea class="input" name="headline">${esc(s.headline || "Gear that feels <em>designed for you</em>.")}</textarea></label>
+      <label class="field"><span>Sub-headline</span><textarea class="input" name="subheadline">${esc(s.subheadline || "A tight, curated catalogue of audio, wearables and everyday carry — tested by us, priced fairly, delivered fast. No account needed until you check out.")}</textarea></label>
+      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(s.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1000&q=80")}" /></label>
+      <div class="grid2">
+        <label class="field"><span>Button 1 text</span><input class="input" name="cta1_text" value="${esc(s.cta1_text || "Shop the collection")}" /></label>
+        <label class="field"><span>Button 1 link</span><input class="input" name="cta1_link" value="${esc(s.cta1_link || "#shop")}" /></label>
+        <label class="field"><span>Button 2 text</span><input class="input" name="cta2_text" value="${esc(s.cta2_text || "See today's deals")}" /></label>
+        <label class="field"><span>Button 2 link</span><input class="input" name="cta2_link" value="${esc(s.cta2_link || "#deals")}" /></label>
+      </div>
+      <button class="btn btn-primary">Save changes</button>
+    </form>
+  </div>`;
+  $("#sf").onsubmit = async (e) => {
+    e.preventDefault();
+    const value = Object.fromEntries(new FormData(e.target));
+    await api("/admin/settings", { method: "PUT", body: { key: "storefront", value } });
+    toast("Storefront updated");
+    go("storefront");
+  };
+};
 
 /* ---- 5. inventory ---- */
 RENDER.inventory = async () => {

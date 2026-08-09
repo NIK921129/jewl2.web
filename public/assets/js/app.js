@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#marquee").innerHTML = new Array(2).fill('<span>Free shipping over ₹999</span><span>7-day returns</span><span>24h dispatch</span><span>Secure checkout</span><span>Verified reviews</span><span>Coupon WELCOME10</span>').join("");
   bindUI();
   loadProducts();
+  loadStorefront();
   renderCart();
   renderWish();
   dealTimer();
@@ -47,6 +48,22 @@ function bindUI() {
   };
   window.addEventListener("scroll", () => $("#backTop").classList.toggle("show", scrollY > 700));
   $("#backTop").onclick = () => scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadStorefront() {
+  try {
+    const s = await api("/settings/storefront");
+    if (s.pill) $(".hero .pill").textContent = s.pill;
+    if (s.headline) $(".hero h1").innerHTML = s.headline;
+    if (s.subheadline) $(".hero p").textContent = s.subheadline;
+    if (s.image) $(".hero-art img").src = s.image;
+    if (s.cta1_text) $(".hero-cta a:first-child").textContent = s.cta1_text;
+    if (s.cta1_link) $(".hero-cta a:first-child").href = s.cta1_link;
+    if (s.cta2_text) $(".hero-cta a:last-child").textContent = s.cta2_text;
+    if (s.cta2_link) $(".hero-cta a:last-child").href = s.cta2_link;
+  } catch (e) {
+    console.warn("Could not load storefront settings:", e.message);
+  }
 }
 
 /* --------------------------- catalogue --------------------------- */

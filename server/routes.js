@@ -45,6 +45,13 @@ router.get("/config", (_req, res) =>
   res.json({ currency: CURRENCY, freeShippingOver: FREE_SHIPPING_OVER, shippingFee: SHIPPING_FEE })
 );
 
+router.get(
+  "/settings/storefront",
+  wrap(async (_req, res) => {
+    res.json((await Setting.findOne({ key: "storefront" }))?.value || {});
+  })
+);
+
 /* ---------------------------------- auth ---------------------------------- */
 router.post(
   "/auth/signup",
@@ -385,7 +392,8 @@ router.delete("/admin/reviews/:id", adminOnly, wrap(async (req, res) => {
 router.get("/admin/settings", adminOnly, wrap(async (_req, res) => res.json(await Setting.find())));
 router.put("/admin/settings", adminOnly, wrap(async (req, res) => {
   const { key, value } = req.body || {};
-  res.json(await Setting.findOneAndUpdate({ key }, { key, value }, { upsert: true, new: true }));
+  if (!key || !value) return res.status(400).json({ error: "Key and value are required" });
+  res.json(await Setting.findOneAndUpdate({ key }, { value }, { upsert: true, new: true }));
 }));
 
 // data export (CSV / JSON download)
