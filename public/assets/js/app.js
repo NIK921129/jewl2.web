@@ -336,7 +336,7 @@ async function openAccount() {
 }
 
 /* --------------------------- checkout --------------------------- */
-function openCheckout() {
+async function openCheckout() {
   if (!CART.length) return toast("Your bag is empty", "err");
   closeAll(); open$("#checkoutModal");
   const t = cartTotals();
