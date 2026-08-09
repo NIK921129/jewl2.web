@@ -349,7 +349,7 @@ router.get("/admin/products", adminOnly, wrap(async (req, res) => {
 }));
 router.post("/admin/products", adminOnly, wrap(async (req, res) => res.json(await Product.create(req.body))));
 router.put("/admin/products/:id", adminOnly, wrap(async (req, res) =>
-  res.json(await Product.findByIdAndUpdate(req.params.id, req.body, { new: true }))));
+  res.json(await Product.findByIdAndUpdate(req.params.id, clean(req.body), { new: true }))));
 router.delete("/admin/products/:id", adminOnly, wrap(async (req, res) => {
   await Product.findByIdAndDelete(req.params.id);
   res.json({ ok: true });
