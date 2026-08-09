@@ -153,7 +153,7 @@ RENDER.products = async () => {
     <div class="toolbar">
       <input class="input" id="pq" placeholder="Search products…" style="max-width:280px" />
       <select class="input" id="pcat" style="width:auto"><option value="">All categories</option>${[...new Set(items.map((i) => i.category))].map((c) => `<option>${esc(c)}</option>`).join("")}</select>
-      <button class="btn btn-primary btn-sm" onclick="go('addproduct')">➕ New product</button>
+      <button class="btn btn-primary btn-sm" id="addProductBtn">➕ New product</button>
       <button class="btn btn-ghost btn-sm" id="bulkDel">Delete selected</button>
       <button class="btn btn-ghost btn-sm" id="bulkFeat">Feature selected</button>
     </div>
@@ -171,7 +171,7 @@ RENDER.products = async () => {
         `<span class="pill ${p.stock > 5 ? "paid" : p.stock ? "pending" : "cancelled"}">${p.stock}</span>`,
         `<span class="stars">${stars(p.rating)}</span>`,
         p.active ? '<span class="pill paid">active</span>' : '<span class="pill cancelled">hidden</span>',
-        `<button class="btn btn-sm btn-ghost" data-edit="${p._id}">Edit</button>
+        `<button class="btn btn-sm btn-ghost" data-edit="${p._id}">Edit</button><button class="btn btn-sm btn-ghost" data-stock="${p._id}">+ Stock</button>
          <button class="btn btn-sm btn-ghost" data-toggle="${p._id}">${p.active ? "Hide" : "Show"}</button>
          <button class="btn btn-sm btn-danger" data-del="${p._id}">Delete</button>`,
       ])
@@ -186,9 +186,16 @@ RENDER.products = async () => {
       if (!confirm("Delete this product?")) return;
       await api("/admin/products/" + b.dataset.del, { method: "DELETE" }); toast("Product deleted"); go("products");
     }));
+    $$("[data-stock]").forEach((b) => (b.onclick = async () => {
+      const p = items.find((x) => x._id === b.dataset.stock);
+      const toAdd = prompt(`Add stock for ${p.title}.\n\nCurrent stock: ${p.stock}\nHow many units to add?`, "10");
+      if (!toAdd || isNaN(toAdd)) return;
+      await api("/admin/products/" + p._id, { method: "PUT", body: { stock: p.stock + Number(toAdd) } }); toast("Stock updated"); go("products");
+    }));
   };
   $("#pq").oninput = draw; $("#pcat").onchange = draw;
   const sel = () => $$(".sel:checked").map((s) => s.value);
+  $("#addProductBtn").onclick = () => productForm(null);
   $("#bulkDel").onclick = async () => { if (!sel().length || !confirm("Delete selected products?")) return; await api("/admin/products/bulk", { method: "POST", body: { ids: sel(), action: "delete" } }); go("products"); };
   $("#bulkFeat").onclick = async () => { if (!sel().length) return; await api("/admin/products/bulk", { method: "POST", body: { ids: sel(), action: "feature", value: true } }); toast("Featured"); go("products"); };
   draw();
@@ -220,7 +227,7 @@ function productForm(p, inline = false) {
       <button class="btn btn-primary">${p ? "Save changes" : "Create product"}</button>
     </form>`;
   if (inline) $("#page").innerHTML = `<div class="panel" style="max-width:820px">${html}</div>`;
-  else openModal(`<div class="modal-head"><h3>Edit product</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>${html}`, true);
+  else openModal(`<div class="modal-head"><h3>${p ? 'Edit' : 'Add'} product</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>${html}`, true);
   $("#pf").onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
