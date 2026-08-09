@@ -224,8 +224,14 @@ function productForm(p, inline = false) {
   $("#pf").onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
-    const body = { ...f, price: +f.price, compareAtPrice: +f.compareAtPrice, stock: +f.stock, rating: +f.rating,
-      tags: f.tags ? f.tags.split(",").map((t) => t.trim()) : [], featured: !!f.featured, active: !!f.active };
+    const body = {
+      ...f,
+      price: +f.price,
+      compareAtPrice: +f.compareAtPrice,
+      stock: +f.stock,
+      rating: +f.rating,
+      tags: f.tags ? f.tags.split(",").map((t) => t.trim()) : [], featured: !!f.featured, active: !!f.active
+    };
     try {
       if (p) await api("/admin/products/" + p._id, { method: "PUT", body });
       else await api("/admin/products", { method: "POST", body });
