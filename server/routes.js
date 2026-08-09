@@ -52,6 +52,13 @@ router.get(
   })
 );
 
+router.get(
+  "/settings/chat_widget",
+  wrap(async (_req, res) => {
+    res.json((await Setting.findOne({ key: "chat_widget" }))?.value || {});
+  })
+);
+
 /* ---------------------------------- auth ---------------------------------- */
 router.post(
   "/auth/signup",

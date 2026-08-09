@@ -56,6 +56,7 @@ const TITLES = {
   storefront: ["Storefront", "Customize homepage content"],
   orders: ["Orders", "Full order lifecycle management"],
   coupons: ["Coupons", "Discount codes and campaigns"],
+  chat: ["Live Chat", "Customer support chat widget"],
   users: ["Customers & IDs", "Create logins, reset passwords, block users"],
   bags: ["Bag lists", "What customers are carrying right now"],
   messages: ["Messages", "Contact form inbox"],
@@ -380,6 +381,31 @@ RENDER.coupons = async () => {
     toast("Coupon created"); go("coupons");
   };
   $$("[data-cdel]").forEach((b) => (b.onclick = async () => { await api("/admin/coupons/" + b.dataset.cdel, { method: "DELETE" }); go("coupons"); }));
+};
+
+/* ---- NEW: live chat ---- */
+RENDER.chat = async () => {
+  const s = (await api("/admin/settings").then((res) => res.find((x) => x.key === "chat_widget")?.value)) || {};
+  $("#page").innerHTML = `
+  <div class="panel" style="max-width:820px"><h3>Live Chat Setup (Tawk.to)</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:18px">
+      Integrate a free, real-time chat widget on your storefront. Customers can talk to you directly, and you can reply from the Tawk.to dashboard or mobile app.
+    </p>
+    <ol style="font-size:14px;line-height:1.6;margin-bottom:18px;padding-left:20px">
+      <li>Create a free account at <a href="https://tawk.to" target="_blank">tawk.to</a>.</li>
+      <li>During setup, find your <b>Property ID</b> and <b>Widget ID</b>. They are in the script they provide, e.g., <code>.../<b>propertyId</b>/<b>widgetId</b></code>.</li>
+      <li>Enter the IDs below and save. The chat widget will appear on your store.</li>
+    </ol>
+    <form id="chatForm">
+      <div class="grid2">
+        <label class="field"><span>Property ID</span><input class="input" name="propertyId" value="${esc(s.propertyId || "")}" placeholder="e.g. 661d12a1a24a..." /></label>
+        <label class="field"><span>Widget ID</span><input class="input" name="widgetId" value="${esc(s.widgetId || "")}" placeholder="e.g. 1hsar9c9q" /></label>
+      </div>
+      <button class="btn btn-primary">Save settings</button>
+      ${s.propertyId ? `<a href="https://dashboard.tawk.to/" target="_blank" class="btn btn-ghost" style="margin-left:10px">Open Chat Dashboard</a>` : ""}
+    </form>
+  </div>`;
+  $("#chatForm").onsubmit = async (e) => { e.preventDefault(); const value = Object.fromEntries(new FormData(e.target)); await api("/admin/settings", { method: "PUT", body: { key: "chat_widget", value } }); toast("Chat settings saved"); go("chat"); };
 };
 
 /* ---- 8. users ---- */

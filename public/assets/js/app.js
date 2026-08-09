@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindUI();
   loadProducts();
   loadStorefront();
+  loadChatWidget();
   renderCart();
   renderWish();
   dealTimer();
@@ -64,6 +65,22 @@ async function loadStorefront() {
   } catch (e) {
     console.warn("Could not load storefront settings:", e.message);
   }
+}
+
+async function loadChatWidget() {
+  try {
+    const s = await api("/settings/chat_widget"); // A new, simple public endpoint
+    if (!s.propertyId || !s.widgetId) return;
+    window.Tawk_API = window.Tawk_API || {};
+    window.Tawk_API.onLoad = () => {
+      const u = auth.user();
+      if (u) window.Tawk_API.setAttributes({ name: u.name, email: u.email });
+    };
+    const script = document.createElement("script");
+    script.src = `https://embed.tawk.to/${s.propertyId}/${s.widgetId}`;
+    script.async = true;
+    document.head.appendChild(script);
+  } catch (e) { console.warn("Could not load chat widget:", e.message); }
 }
 
 /* --------------------------- catalogue --------------------------- */
