@@ -50,6 +50,11 @@ const adminOnly = [
 const wrap = (fn) => (req, res) => fn(req, res).catch((e) => res.status(500).json({ error: e.message }));
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+function clean(o) {
+  const r = {};
+  Object.entries(o || {}).forEach(([k, v]) => v !== undefined && (r[k] = v));
+  return r;
+}
 /* ---------------------------------- meta --------------------------------- */
 router.get("/health", (_req, res) => res.json({ ok: true, time: new Date() }));
 router.get("/config", (_req, res) =>

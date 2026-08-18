@@ -48,7 +48,11 @@ async function api(path, { method = "GET", body, raw = false } = {}) {
   try {
     res = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   } catch (e) {
-    if (CFG.ALLOW_DEMO_FALLBACK) { DEMO = true; return demoApi(path, method, body); }
+    if (CFG.ALLOW_DEMO_FALLBACK) {
+      DEMO = true;
+      toast("Backend not connected, running in demo mode.", "err");
+      return demoApi(path, method, body);
+    }
     throw new Error("Cannot reach the server. Please try again.");
   }
   if (raw) return res;

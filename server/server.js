@@ -14,8 +14,11 @@ const { Product, Coupon, Setting } = require("./models");
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(
-  cors({
-    origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()),
+  cors((req, callback) => {
+    const origin = req.header('Origin');
+    const allowedOrigins = (process.env.CORS_ORIGIN || 'http://127.0.0.1:5500,http://localhost:5500').split(',').map(s => s.trim());
+    const corsOptions = { origin: allowedOrigins.includes(origin) };
+    callback(null, corsOptions);
   })
 );
 
