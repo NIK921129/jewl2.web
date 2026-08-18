@@ -612,6 +612,7 @@ RENDER.settings = async () => {
   </div>
   <div class="panel"><h3>System</h3>
     <div class="rowline"><span>Reset local demo data</span><button class="btn btn-sm btn-danger" id="resetDemo">Reset</button></div>
+    <div class="rowline"><span>Reset & re-seed live database</span><button class="btn btn-sm btn-danger" id="resetLive">Reset</button></div>
   </div>`;
   $("#resetDemo").onclick = () => { store.del("demo_db"); toast("Demo data reset"); go("dashboard"); };
   $("#healthCheck").onclick = async () => {
@@ -621,6 +622,11 @@ RENDER.settings = async () => {
     } catch (e) {
       toast(`API is unreachable. Error: ${e.message}`, "err");
     }
+  };
+  $("#resetLive").onclick = async () => {
+    if (!confirm("This will delete all products, orders, and users from your live database and re-seed it with demo data. Are you sure?")) return;
+    try { await api("/admin/system/reset", { method: "POST" }); toast("Live database has been reset."); go("dashboard"); }
+    catch (e) { toast(`Error: ${e.message}`, "err"); }
   };
 };
 
