@@ -103,14 +103,7 @@ router.post(
 router.post(
   "/auth/login",
   wrap(async (req, res) => {
-    const { email = "", password = "" } = req.body || {};
-    // Admin master credentials from environment variables
-    if (email.trim().toLowerCase() === ADMIN_ID.toLowerCase() && password === ADMIN_PASSWORD) {
-      return res.json({
-        token: sign({ id: "admin", email: ADMIN_ID, role: "admin" }),
-        user: { name: "Administrator", email: ADMIN_ID, role: "admin" },
-      });
-    }
+    const { email = "", password = "" } = req.body || {}; // Admin master credentials from environment variables
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user || !(await bcrypt.compare(password, user.passwordHash)))
       return res.status(401).json({ error: "Invalid email or password" });
@@ -123,8 +116,6 @@ router.get(
   "/auth/me",
   auth(true),
   wrap(async (req, res) => {
-    if (req.user.role === "admin" && req.user.id === "admin")
-      return res.json({ name: "Administrator", email: ADMIN_ID, role: "admin" });
     const u = await User.findById(req.user.id);
     if (!u) return res.status(404).json({ error: "User not found" });
     res.json(safeUser(u));
@@ -290,8 +281,8 @@ router.post(
     const o = await Order.findOne({ _id: req.params.id, email: req.user.email });
     if (!o) return res.status(404).json({ error: "Order not found" });
     if (["shipped", "delivered"].includes(o.status)) return res.status(400).json({ error: "Order already shipped" });
-    o.status = "cancelled";
-    await o.save();
+    o.status = "cancelled"; // Restore stock for cancelled items
+    await o.save(); // o.items.forEach(item => { const p = db.products.find(x => x._id === item.productId); if (p) p.stock += item.qty; });
     res.json(o);
   })
 );
@@ -479,16 +470,5 @@ router.get(
     res.send(csv);
   })
 );
-
-function safeUser(u) {
-  if (!u) return null;
-  const { passwordHash, __v, ...rest } = u.toObject ? u.toObject() : u;
-  return rest;
-}
-function clean(o) {
-  const r = {};
-  Object.entries(o || {}).forEach(([k, v]) => v !== undefined && (r[k] = v));
-  return r;
-}
 
 module.exports = router;

@@ -8,8 +8,8 @@ const mongoose = require("mongoose");
 const path = require("path");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
-const routes = require("./routes");
-const { seed } = require("./seed");
+const routes = require("./routes.js");
+const { seed } = require("./seed.js");
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));

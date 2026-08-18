@@ -1,7 +1,23 @@
 // server/seed.js — demo data seeding logic
-const { Product, Coupon } = require("./models");
+const { Product, Coupon, User } = require("./models");
+const bcrypt = require("bcryptjs");
+
+const ADMIN_ID = process.env.ADMIN_ID || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
 
 async function seed() {
+  // Seed admin user if not present
+  if ((await User.countDocuments({ role: "admin" })) === 0) {
+    await User.create({
+      name: "Administrator",
+      email: ADMIN_ID.toLowerCase(),
+      passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
+      role: "admin",
+    });
+    console.log("✅ Seeded admin user");
+  }
+
+  // Seed products and coupons only if products are empty
   if ((await Product.countDocuments()) > 0) return;
   const img = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
   await Product.insertMany([
