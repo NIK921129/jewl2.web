@@ -174,7 +174,10 @@
     <form id="authForm">
       <label class="field" id="nameField" style="display:none"><span>Full name</span><input class="input" name="name" /></label>
       <label class="field"><span>Email</span><input class="input" name="email" type="text" required placeholder="you@email.com" /></label>
-      <label class="field"><span>Password</span><input class="input" name="password" type="password" required minlength="6" placeholder="min 6 characters" /></label>
+      <label class="field"><span>Password</span>
+        <input class="input" id="pwField" name="password" type="password" required minlength="6" placeholder="min 6 characters" />
+        <button type="button" id="pwToggle" class="icon-btn" style="position:absolute;right:10px;top:32px;width:30px;height:30px;">👁️</button>
+      </label>
       <button class="btn btn-primary btn-block" id="authSubmit">Login</button>
       <a href="#" id="forgotPwLink" style="font-size:12px;color:var(--muted);margin-top:14px;display:block;text-align:center">Forgot password?</a>
     </form>

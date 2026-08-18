@@ -41,6 +41,12 @@ function bindUI() {
   // auth modal tabs
   $$("#authModal .tabs button").forEach((b) => (b.onclick = () => openAuth(b.dataset.tab, AFTER_AUTH_CHECKOUT)));
   $("#authForm").onsubmit = submitAuth;
+  $("#pwToggle").onclick = () => {
+    const field = $("#pwField");
+    const isText = field.type === "text";
+    field.type = isText ? "password" : "text";
+    $("#pwToggle").textContent = isText ? "👁️" : "🙈";
+  };
   $("#forgotPwLink").onclick = (e) => { e.preventDefault(); openForgotPw(); };
   $("#newsForm").onsubmit = (e) => { e.preventDefault(); e.target.reset(); toast("Subscribed! Use code WELCOME10 🎉"); };
   $("#contactForm").onsubmit = async (e) => {
