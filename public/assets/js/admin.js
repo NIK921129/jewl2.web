@@ -94,7 +94,7 @@ const RENDER = {};
 /* ---- 1. dashboard ---- */
 RENDER.dashboard = async () => {
   STATS = await api("/admin/stats");
-  const s = STATS, max = Math.max(1, ...s.days.map((d) => d.revenue));
+  const s = STATS;
   $("#page").innerHTML = `
   <div class="stats">
     <div class="stat"><span>Revenue</span><b>${money(s.revenue)}</b><i>all time</i></div>
@@ -103,9 +103,9 @@ RENDER.dashboard = async () => {
     <div class="stat"><span>Customers</span><b>${s.users}</b><i>${s.unreadMessages} unread messages</i></div>
     <div class="stat"><span>Avg order value</span><b>${money(s.avgOrder)}</b><i>per order</i></div>
   </div>
-  <div class="panel"><h3>Revenue — last 14 days</h3>
-    <div class="bars">${s.days.map((d) => `<div style="height:${(d.revenue / max) * 100}%" data-v="${d.date}: ${money(d.revenue)}"></div>`).join("")}</div>
-    <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:8px"><span>${s.days[0].date}</span><span>${s.days.at(-1).date}</span></div>
+  <div class="grid2">
+    <div class="panel"><h3>Revenue — last 14 days</h3><div id="revenueChart"></div></div>
+    <div class="panel"><h3>Orders — last 14 days</h3><div id="ordersChart"></div></div>
   </div>
   <div class="grid2">
     <div class="panel"><h3>Recent orders</h3>${table(
@@ -117,6 +117,8 @@ RENDER.dashboard = async () => {
   </div>
   <div class="panel"><h3>⚠️ Low stock alerts</h3>${s.lowStock.length ? s.lowStock.map((p) =>
     `<div class="rowline"><span>${esc(p.title)}</span><span class="pill ${p.stock ? "pending" : "cancelled"}">${p.stock} left</span></div>`).join("") : '<div class="empty">All products are well stocked.</div>'}</div>`;
+  renderChart($("#revenueChart"), s.days, { key: "revenue", label: "earned", color: "var(--brand)" });
+  renderChart($("#ordersChart"), s.days, { key: "orders", label: "orders", color: "var(--brand-2)" });
 };
 
 /* ---- 2. analytics ---- */
@@ -210,8 +212,8 @@ function productForm(p, inline = false) {
         <label class="field"><span>Stock</span><input class="input" name="stock" type="number" value="${p?.stock ?? 0}" /></label>
         <label class="field"><span>Rating</span><input class="input" name="rating" type="number" step="0.1" max="5" value="${p?.rating ?? 4.5}" /></label>
       </div>
-      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(p?.image || "")}" placeholder="https://…" /></label>
-      <label class="field"><span>Description</span><textarea class="input" name="description">${esc(p?.description || "")}</textarea></label>
+      <label class="field"><span>Product Images (first is main, up to 5)</span><input class="input" name="images" type="file" accept="image/*" multiple /></label>
+      <label class="field"><span>Description</span><textarea class="input" name="description" rows="3">${esc(p?.description || "")}</textarea></label>
       <label class="field"><span>Tags (comma separated)</span><input class="input" name="tags" value="${esc((p?.tags || []).join(", "))}" /></label>
       <div style="display:flex;gap:18px;margin:10px 0 18px;font-size:14px">
         <label><input type="checkbox" name="featured" ${p?.featured ? "checked" : ""}> Featured</label>
@@ -223,21 +225,33 @@ function productForm(p, inline = false) {
   else openModal(`<div class="modal-head"><h3>Edit product</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>${html}`, true);
   $("#pf").onsubmit = async (e) => {
     e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.textContent = "Saving...";
     const f = Object.fromEntries(new FormData(e.target));
+    let imagePaths = [p?.image, ...(p?.gallery || [])].filter(Boolean);
+    const files = e.target.querySelector('input[type="file"]').files;
+    if (files.length > 0) {
+      const uploadData = new FormData();
+      for (const file of files) uploadData.append("images", file);
+      const res = await api("/admin/products/upload", { method: "POST", body: uploadData, raw: true });
+      const { paths } = await res.json();
+      imagePaths = paths;
+    }
     const body = {
       ...f,
+      image: imagePaths[0] || "",
+      gallery: imagePaths.slice(1),
       price: +f.price,
       compareAtPrice: +f.compareAtPrice,
       stock: +f.stock,
       rating: +f.rating,
       tags: f.tags ? f.tags.split(",").map((t) => t.trim()) : [], featured: !!f.featured, active: !!f.active
     };
-    delete body.images;
     try {
       if (p) await api("/admin/products/" + p._id, { method: "PUT", body });
       else await api("/admin/products", { method: "POST", body });
       toast(p ? "Product updated" : "Product created"); closeModal(); go("products");
-    } catch (err) { toast(err.message, "err"); }
+    } catch (err) { toast(err.message, "err"); btn.disabled = false; btn.textContent = p ? "Save changes" : "Create product"; }
   };
 }
 

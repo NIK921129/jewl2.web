@@ -354,6 +354,13 @@ router.delete("/admin/products/:id", adminOnly, wrap(async (req, res) => {
   await Product.findByIdAndDelete(req.params.id);
   res.json({ ok: true });
 }));
+
+router.post("/admin/products/upload", adminOnly, upload.array("images", 5), wrap(async (req, res) => {
+  if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No files uploaded." });
+  const paths = req.files.map(file => `/uploads/${file.filename}`);
+  res.json({ paths });
+}));
+
 router.post("/admin/products/bulk", adminOnly, wrap(async (req, res) => {
   const { ids = [], action, value } = req.body || {};
   if (action === "delete") await Product.deleteMany({ _id: { $in: ids } });
@@ -376,8 +383,14 @@ router.get("/admin/orders/approvals", adminOnly, wrap(async (_req, res) => {
   res.json(await Order.find({ status: "awaiting_approval" }).sort({ createdAt: -1 }));
 }));
 
-router.put("/admin/orders/:id", adminOnly, wrap(async (req, res) =>
-  res.json(await Order.findByIdAndUpdate(req.params.id, clean(req.body), { new: true }))));
+router.put("/admin/orders/:id", adminOnly, wrap(async (req, res) => {
+  const order = await Order.findByIdAndUpdate(req.params.id, clean(req.body), { new: true });
+  // If the order has a user associated, emit a real-time update
+  if (order && order.user) {
+    req.io.to(order.user.toString()).emit("order_update", order);
+  }
+  res.json(order);
+}));
 router.delete("/admin/orders/:id", adminOnly, wrap(async (req, res) => {
   await Order.findByIdAndDelete(req.params.id);
   res.json({ ok: true });

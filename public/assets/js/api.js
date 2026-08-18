@@ -120,22 +120,40 @@ function demoApi(path, method, body) {
     if (!u) throw new Error("Invalid email or password");
     return { token: "demo." + u._id, user: u };
   }
-  if (path === "/auth/me") return me;
+  if (path === "/auth/me" && method === "GET") return me;
+  if (path === "/auth/me" && method === "PUT") {
+    const u = db.users.find((x) => x._id === me._id);
+    if (!u) throw new Error("User not found");
+    Object.assign(u, { name: body.name, phone: body.phone, address: body.address });
+    return done({ user: u });
+  }
 
   // catalogue
   if (seg[0] === "products" && seg.length === 1) {
     let items = db.products.filter((p) => p.active);
     const q = (qs.get("q") || "").toLowerCase();
-    if (q) items = items.filter((p) => (p.title + p.category).toLowerCase().includes(q));
     const cat = qs.get("category");
+    const min = +qs.get("min");
+    const max = +qs.get("max");
+
+    if (q) items = items.filter((p) => (p.title + p.category).toLowerCase().includes(q));
     if (cat && cat !== "all") items = items.filter((p) => p.category === cat);
+    if (min) items = items.filter(p => p.price >= min);
+    if (max) items = items.filter(p => p.price <= max);
+
     if (qs.get("featured") === "1") items = items.filter((p) => p.featured);
     const s = qs.get("sort");
     if (s === "priceAsc") items.sort((a, b) => a.price - b.price);
     if (s === "priceDesc") items.sort((a, b) => b.price - a.price);
     if (s === "rating") items.sort((a, b) => b.rating - a.rating);
-    if (s === "popular") items.sort((a, b) => b.views - a.views);
-    return { items, total: items.length, categories: [...new Set(db.products.map((p) => p.category))] };
+    if (s === "popular") items.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+    const page = +qs.get("page") || 1;
+    const limit = 12;
+    const total = items.length;
+    const paginatedItems = items.slice((page - 1) * limit, page * limit);
+
+    return { items: paginatedItems, total, page, totalPages: Math.ceil(total / limit), categories: [...new Set(db.products.map((p) => p.category))] };
   }
   if (seg[0] === "products" && seg.length === 2) {
     const p = db.products.find((x) => x._id === seg[1]);
@@ -171,7 +189,17 @@ function demoApi(path, method, body) {
   }
   if (path === "/orders/mine") return db.orders.filter((o) => o.email === me.email);
   if (seg[0] === "orders" && seg[2] === "cancel") {
-    const o = db.orders.find((x) => x._id === seg[1]); if (o) o.status = "cancelled"; return done(o);
+    const o = db.orders.find((x) => x._id === seg[1]);
+    if (o && ["pending", "paid", "processing"].includes(o.status)) {
+      o.status = "cancelled";
+      // Restore stock for cancelled items
+      o.items.forEach(item => { const p = db.products.find(x => x._id === item.productId); if (p) p.stock += item.qty; });
+    }
+    return done(o);
+  }
+  if (seg[0] === "orders" && seg.length === 2 && method === "PUT") {
+    const o = db.orders.find((x) => x._id === seg[1]);
+    if (o) Object.assign(o, body); return done(o);
   }
 
   // admin

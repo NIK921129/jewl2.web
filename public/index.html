@@ -93,6 +93,7 @@
       </select>
     </div>
     <div class="grid" id="grid"></div>
+    <div class="pagination" id="pagination"></div>
   </div>
 </section>
 
@@ -175,6 +176,7 @@
       <label class="field"><span>Email</span><input class="input" name="email" type="text" required placeholder="you@email.com" /></label>
       <label class="field"><span>Password</span><input class="input" name="password" type="password" required minlength="6" placeholder="min 6 characters" /></label>
       <button class="btn btn-primary btn-block" id="authSubmit">Login</button>
+      <a href="#" id="forgotPwLink" style="font-size:12px;color:var(--muted);margin-top:14px;display:block;text-align:center">Forgot password?</a>
     </form>
     <p style="font-size:12px;color:var(--muted);margin-top:14px">Admin? Use your admin id and password on the Login tab — you'll be sent to the admin panel.</p>
   </div>
@@ -188,6 +190,9 @@
 
 <!-- CHECKOUT MODAL -->
 <div class="modal" id="checkoutModal"><div class="modal-card" id="checkoutBody"></div></div>
+
+<!-- GENERIC MODAL -->
+<div class="modal" id="genericModal"><div class="modal-card" id="genericModalBody"></div></div>
 
 <script src="/assets/js/config.js"></script>
 <script src="/assets/js/api.js"></script>

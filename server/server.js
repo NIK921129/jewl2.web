@@ -39,7 +39,10 @@ io.use((socket, next) => {
   if (!token) return next(); // allow non-auth connections
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET || "change_me_secret");
-    if (user.role === "admin") socket.join("admins");
+    if (user.role === "admin") {
+      socket.join("admins");
+    }
+    if (user.id) socket.join(user.id.toString()); // Join a room for this specific user
   } catch (e) { console.error("Socket auth error:", e.message); }
   next();
 });
