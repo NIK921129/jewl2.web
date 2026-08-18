@@ -55,6 +55,12 @@ function clean(o) {
   Object.entries(o || {}).forEach(([k, v]) => v !== undefined && (r[k] = v));
   return r;
 }
+
+function safeUser(u) {
+  if (!u) return null;
+  const { passwordHash, __v, ...rest } = u.toObject ? u.toObject() : u;
+  return rest;
+}
 /* ---------------------------------- meta --------------------------------- */
 router.get("/health", (_req, res) => res.json({ ok: true, time: new Date() }));
 router.get("/config", (_req, res) =>
@@ -102,19 +108,6 @@ router.post(
 
 router.post(
   "/auth/login",
-  wrap(async (req, res) => {
-    const { email = "", password = "" } = req.body || {}; // Admin master credentials from environment variables
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash)))
-      return res.status(401).json({ error: "Invalid email or password" });
-    if (user.blocked) return res.status(403).json({ error: "Account blocked. Contact support." });
-    res.json({ token: sign({ id: user.id, email: user.email, role: user.role }), user: safeUser(user) });
-  })
-);
-
-router.get(
-  "/auth/me",
-  auth(true),
   wrap(async (req, res) => {
     const u = await User.findById(req.user.id);
     if (!u) return res.status(404).json({ error: "User not found" });
@@ -189,7 +182,7 @@ router.post(
     const r = await Review.create({ product: req.params.id, email: req.user.email, name, rating, comment });
     const all = await Review.find({ product: req.params.id });
     const avg = all.reduce((s, x) => s + x.rating, 0) / (all.length || 1);
-    await Product.findByIdAndUpdate(req.params.id, { rating: Math.round(avg * 10) / 10, reviewsCount: all.length });
+    await Product.findByIdAndUpdate(req.params.id, { rating: Math.round(avg * 10) / 10, reviewsCount: all.length }).exec();
     res.json(r);
   })
 );
@@ -281,8 +274,12 @@ router.post(
     const o = await Order.findOne({ _id: req.params.id, email: req.user.email });
     if (!o) return res.status(404).json({ error: "Order not found" });
     if (["shipped", "delivered"].includes(o.status)) return res.status(400).json({ error: "Order already shipped" });
-    o.status = "cancelled"; // Restore stock for cancelled items
-    await o.save(); // o.items.forEach(item => { const p = db.products.find(x => x._id === item.productId); if (p) p.stock += item.qty; });
+    o.status = "cancelled";
+    // Restore stock for cancelled items
+    for (const item of o.items) {
+      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
+    }
+    await o.save();
     res.json(o);
   })
 );

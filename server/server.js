@@ -14,11 +14,16 @@ const { seed } = require("./seed.js");
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(
-  cors((req, callback) => {
-    const origin = req.header('Origin');
-    const allowedOrigins = (process.env.CORS_ORIGIN || 'http://127.0.0.1:5500,http://localhost:5500').split(',').map(s => s.trim());
-    const corsOptions = { origin: allowedOrigins.includes(origin) };
-    callback(null, corsOptions);
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      const allowedOrigins = (process.env.CORS_ORIGIN || 'http://127.0.0.1:5500,http://localhost:5500').split(',').map(s => s.trim());
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+      }
+      return callback(null, true);
+    },
   })
 );
 
