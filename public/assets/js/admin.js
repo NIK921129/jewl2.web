@@ -12,6 +12,12 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#gateBtn").textContent = b.dataset.tab === "signup" ? "Create account" : "Login";
     $("#gateForm").dataset.tab = b.dataset.tab;
   }));
+  $("#adminPwToggle").onclick = () => {
+    const field = $("#adminPwField");
+    const isText = field.type === "text";
+    field.type = isText ? "password" : "text";
+    $("#adminPwToggle").textContent = isText ? "👁️" : "🙈";
+  };
   if (auth.token() && auth.isAdmin()) boot();
 });
 

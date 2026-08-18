@@ -21,7 +21,10 @@
     <form id="gateForm">
       <label class="field" id="gName" style="display:none"><span>Full name</span><input class="input" name="name" /></label>
       <label class="field"><span>Email / Admin ID</span><input class="input" name="email" required placeholder="admin" /></label>
-      <label class="field"><span>Password</span><input class="input" name="password" type="password" required /></label>
+      <label class="field"><span>Password</span>
+        <input class="input" id="adminPwField" name="password" type="password" required />
+        <button type="button" id="adminPwToggle" class="icon-btn" style="position:absolute;right:10px;top:32px;width:30px;height:30px;">👁️</button>
+      </label>
       <button class="btn btn-primary btn-block" id="gateBtn">Login</button>
     </form>
     <p style="font-size:12px;color:var(--muted);margin-top:14px">Credentials are configured in your environment variables (ADMIN_ID / ADMIN_PASSWORD).</p>

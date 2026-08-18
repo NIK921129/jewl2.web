@@ -109,9 +109,16 @@ router.post(
 router.post(
   "/auth/login",
   wrap(async (req, res) => {
-    const u = await User.findById(req.user.id);
-    if (!u) return res.status(404).json({ error: "User not found" });
-    res.json(safeUser(u));
+    const { email = "", password = "" } = req.body || {};
+    // Handle special case for master admin credentials from .env
+    if (email.toLowerCase() === ADMIN_ID.toLowerCase() && password === ADMIN_PASSWORD) {
+      const adminUser = await User.findOne({ email: ADMIN_ID.toLowerCase(), role: 'admin' });
+      return res.json({ token: sign({ id: adminUser?._id ?? 'admin', email: ADMIN_ID, role: "admin" }), user: adminUser ? safeUser(adminUser) : { name: "Administrator", email: ADMIN_ID, role: "admin" } });
+    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash)))
+      return res.status(401).json({ error: "Invalid email or password" });
+    res.json({ token: sign({ id: user.id, email: user.email, role: user.role }), user: safeUser(user) });
   })
 );
 
