@@ -15,13 +15,17 @@ const FREE_SHIPPING_OVER = Number(process.env.FREE_SHIPPING_OVER || 999);
 const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 49);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
+  destination: (_req, _file, cb) => cb(null, path.join(__dirname, "uploads")),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${req.params.id}-${Date.now()}${ext}`);
   },
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => cb(null, /^image\//.test(file.mimetype)),
+});
 
 const sign = (payload) => jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 
@@ -222,9 +226,10 @@ router.post(
     let subtotal = 0;
     const lines = [];
     for (const it of items) {
-      const p = await Product.findById(it.productId);
-      if (!p) continue;
+      const p = await Product.findOne({ _id: it.productId, active: true });
+      if (!p) return res.status(400).json({ error: "A product in your bag is no longer available" });
       const qty = Math.max(1, Math.min(99, +it.qty || 1));
+      if (p.stock < qty) return res.status(400).json({ error: `${p.title} does not have enough stock` });
       subtotal += p.price * qty;
       lines.push({ productId: p.id, title: p.title, price: p.price, qty, image: p.image });
       await Product.findByIdAndUpdate(p.id, { $inc: { stock: -qty } });
@@ -268,7 +273,13 @@ router.get(
 );
 
 router.post("/orders/:id/screenshot", auth(true), upload.single("screenshot"), wrap(async (req, res) => {
-  const o = await Order.findByIdAndUpdate(req.params.id, { paymentScreenshot: `/uploads/${req.file.filename}`, status: "awaiting_approval" }, { new: true });
+  if (!req.file) return res.status(400).json({ error: "Please upload an image file" });
+  const o = await Order.findOneAndUpdate(
+    { _id: req.params.id, email: req.user.email, status: "awaiting_payment" },
+    { paymentScreenshot: `/uploads/${req.file.filename}`, status: "awaiting_approval" },
+    { new: true }
+  );
+  if (!o) return res.status(404).json({ error: "Payment request not found" });
   res.json(o);
 }));
 
@@ -347,9 +358,12 @@ router.get("/admin/products", adminOnly, wrap(async (req, res) => {
   const q = req.query.q ? { title: new RegExp(esc(req.query.q), "i") } : {};
   res.json(await Product.find(q).sort({ createdAt: -1 }));
 }));
-router.post("/admin/products", adminOnly, wrap(async (req, res) => res.json(await Product.create(req.body))));
-router.put("/admin/products/:id", adminOnly, wrap(async (req, res) =>
-  res.json(await Product.findByIdAndUpdate(req.params.id, clean(req.body), { new: true }))));
+router.post("/admin/products", adminOnly, wrap(async (req, res) => res.status(201).json(await Product.create(clean(req.body)))));
+router.put("/admin/products/:id", adminOnly, wrap(async (req, res) => {
+  const product = await Product.findByIdAndUpdate(req.params.id, clean(req.body), { new: true, runValidators: true });
+  if (!product) return res.status(404).json({ error: "Product not found" });
+  res.json(product);
+}));
 router.delete("/admin/products/:id", adminOnly, wrap(async (req, res) => {
   await Product.findByIdAndDelete(req.params.id);
   res.json({ ok: true });
@@ -437,7 +451,7 @@ router.delete("/admin/reviews/:id", adminOnly, wrap(async (req, res) => {
 router.get("/admin/settings", adminOnly, wrap(async (_req, res) => res.json(await Setting.find())));
 router.put("/admin/settings", adminOnly, wrap(async (req, res) => {
   const { key, value } = req.body || {};
-  if (!key || !value) return res.status(400).json({ error: "Key and value are required" });
+  if (!key || value === undefined) return res.status(400).json({ error: "Key and value are required" });
   res.json(await Setting.findOneAndUpdate({ key }, { value }, { upsert: true, new: true }));
 }));
 

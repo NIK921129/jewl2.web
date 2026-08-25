@@ -4,7 +4,7 @@
 let PAGE = "dashboard", STATS = null, CACHE = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.documentElement.dataset.theme = store.get("theme", "dark");
+  document.documentElement.dataset.theme = store.get("theme", "light");
   $("#gateForm").onsubmit = gateSubmit;
   $$("#gate .tabs button").forEach((b) => (b.onclick = () => {
     $$("#gate .tabs button").forEach((x) => x.classList.toggle("active", x === b));
@@ -599,7 +599,7 @@ RENDER.settings = async () => {
   <div class="panel"><h3>System</h3>
     <div class="rowline"><span>Reset local demo data</span><button class="btn btn-sm btn-danger" id="resetDemo">Reset</button></div>
   </div>`;
-  $("#resetDemo").onclick = () => { store.del("demo_db"); toast("Demo data reset"); go("dashboard"); };
+  $("#resetDemo").onclick = () => { store.del("jewellery_demo_db_v1"); toast("Jewellery demo data reset"); go("dashboard"); };
   $("#healthCheck").onclick = async () => {
     try {
       const data = await api("/health");

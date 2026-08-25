@@ -41,12 +41,13 @@ const auth = {
 /* ------------------------------ fetch wrapper ------------------------------ */
 let DEMO = false;
 async function api(path, { method = "GET", body, raw = false } = {}) {
-  const headers = { "Content-Type": "application/json" };
+  const isFormData = body instanceof FormData;
+  const headers = isFormData ? {} : { "Content-Type": "application/json" };
   const t = auth.token();
   if (t) headers.Authorization = "Bearer " + t;
   let res;
   try {
-    res = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    res = await fetch(API + path, { method, headers, body: body ? (isFormData ? body : JSON.stringify(body)) : undefined });
   } catch (e) {
     if (CFG.ALLOW_DEMO_FALLBACK) { DEMO = true; return demoApi(path, method, body); }
     throw new Error("Cannot reach the server. Please try again.");
