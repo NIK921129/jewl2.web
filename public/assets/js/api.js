@@ -64,21 +64,21 @@ const isDemo = () => DEMO;
    ========================================================= */
 const IMG = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
 const DEMO_SEED = [
-  ["Aurora Wireless Headphones", "Audio", 4999, 7999, 24, true, 4.8, "1505740420928-5e560c06d30e", "Active noise cancelling over-ear headphones with 40h battery life."],
-  ["Pulse Smart Watch", "Wearables", 6499, 8999, 18, true, 4.6, "1523275335684-37898b6baf30", "AMOLED display, heart-rate + SpO2, 7-day battery."],
-  ["Studio Mechanical Keyboard", "Computing", 5799, 0, 12, false, 4.7, "1587829741301-dc798b83add3", "Hot-swappable switches, RGB backlight, aluminium body."],
-  ["Nimbus Bluetooth Speaker", "Audio", 2999, 3999, 40, true, 4.5, "1608043152269-423dbba4e7e1", "360° sound, IPX7 waterproof, 20h playtime."],
-  ["Vision 4K Action Camera", "Cameras", 11999, 0, 8, false, 4.4, "1526170375885-4d8ecf77b99f", "4K60 stabilised video, waterproof to 30m."],
-  ["Orbit Wireless Mouse", "Computing", 1899, 0, 35, false, 4.5, "1527864550417-7fd91fc51a46", "Silent clicks, 4000 DPI, USB-C rechargeable."],
-  ["Halo Desk Lamp", "Home", 2499, 0, 22, false, 4.6, "1507473885765-e6ed057f782c", "Dimmable LED lamp with wireless charging base."],
-  ["Trail Running Shoes", "Fashion", 3999, 5499, 30, false, 4.4, "1542291026-7eec264c27ff", "Lightweight grip sole for road and trail."],
-  ["Everyday Backpack 22L", "Accessories", 2799, 0, 27, true, 4.7, "1553062407-98eeb64c6a62", "Padded laptop bay, hidden pockets, rain cover."],
-  ["Ceramic Pour-Over Set", "Home", 1799, 0, 15, false, 4.8, "1495474472287-4d71bcdd2085", "Hand-glazed dripper with borosilicate carafe."],
-  ["Zen Yoga Mat", "Fitness", 1499, 0, 44, false, 4.2, "1518611012118-696072aa579a", "6mm non-slip TPE mat with carry strap."],
-  ["Lumen Table Speaker", "Audio", 3499, 4499, 0, false, 4.1, "1545127398-14699f92334b", "Warm-toned bookshelf speaker with ambient light."],
+  ["Celeste Diamond Pendant", "Necklaces", 18499, 22999, 12, true, 4.9, "1523170335258-f5ed11844a49", "A refined gold-tone pendant with a brilliant-cut crystal centrepiece."],
+  ["Solitaire Promise Ring", "Rings", 8999, 10999, 18, true, 4.8, "1605100804763-247f67b3557e", "A timeless solitaire ring designed for everyday elegance."],
+  ["Pearl Drop Earrings", "Earrings", 4299, 0, 24, false, 4.7, "1617038220319-276d3cfab638", "Luminous pearl drops finished with a delicate gold-tone setting."],
+  ["Aurora Tennis Bracelet", "Bracelets", 12499, 14999, 16, true, 4.8, "1515562141207-7a88fb7ce338", "A graceful line bracelet set with light-catching stones."],
+  ["Meher Kundan Choker", "Necklaces", 15999, 0, 9, false, 4.6, "1599643478518-a784e5dc4c8f", "An ornate choker with traditional-inspired detailing for celebrations."],
+  ["Mini Hoop Earrings", "Earrings", 2499, 0, 36, false, 4.5, "1535632066927-ab7c9ab60908", "Polished everyday hoops with a lightweight, comfortable fit."],
+  ["Serenity Bangle Set", "Bracelets", 6999, 0, 21, false, 4.6, "1573408301185-9146fe634ad0", "A pair of textured bangles to stack or wear solo."],
+  ["Zodiac Disc Necklace", "Necklaces", 5499, 0, 28, false, 4.7, "1515562141207-7a88fb7ce338", "A personal disc necklace engraved with your zodiac symbol."],
+  ["Emerald Halo Ring", "Rings", 11499, 13999, 14, true, 4.8, "1603561596112-db1dcb9c58c7", "A rich emerald-green stone framed by a radiant halo."],
+  ["Flora Stud Earrings", "Earrings", 3199, 0, 32, false, 4.6, "1611652022419-a9419f74343d", "Petite floral studs that add a soft sparkle to every look."],
+  ["Luna Layered Chain", "Necklaces", 7499, 0, 20, false, 4.7, "1515562141207-7a88fb7ce338", "Two fine chains in one effortlessly layered silhouette."],
 ];
 function demoDb() {
-  let db = store.get("demo_db", null);
+  // A versioned key ensures an existing electronics demo catalogue is refreshed.
+  let db = store.get("jewellery_demo_db_v1", null);
   if (!db) {
     db = {
       products: DEMO_SEED.map((p) => ({
@@ -93,11 +93,11 @@ function demoDb() {
         { _id: uid(), code: "NOVA500", type: "flat", value: 500, minOrder: 2999, active: true, usedCount: 0 },
       ],
     };
-    store.set("demo_db", db);
+    store.set("jewellery_demo_db_v1", db);
   }
   return db;
 }
-const saveDemo = (db) => store.set("demo_db", db);
+const saveDemo = (db) => store.set("jewellery_demo_db_v1", db);
 
 function demoApi(path, method, body) {
   const db = demoDb();

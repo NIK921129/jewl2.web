@@ -248,9 +248,9 @@ RENDER.storefront = async () => {
   <div class="panel" style="max-width:820px"><h3>Hero section</h3>
     <form id="sf">
       <label class="field"><span>Pill text</span><input class="input" name="pill" value="${esc(s.pill || "New season drop")}" /></label>
-      <label class="field"><span>Headline</span><textarea class="input" name="headline">${esc(s.headline || "Gear that feels <em>designed for you</em>.")}</textarea></label>
-      <label class="field"><span>Sub-headline</span><textarea class="input" name="subheadline">${esc(s.subheadline || "A tight, curated catalogue of audio, wearables and everyday carry — tested by us, priced fairly, delivered fast. No account needed until you check out.")}</textarea></label>
-      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(s.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1000&q=80")}" /></label>
+      <label class="field"><span>Headline</span><textarea class="input" name="headline">${esc(s.headline || "Jewellery that feels <em>made for you</em>.")}</textarea></label>
+      <label class="field"><span>Sub-headline</span><textarea class="input" name="subheadline">${esc(s.subheadline || "A thoughtful collection of necklaces, rings, earrings and bracelets — designed for everyday elegance, meaningful gifting and unforgettable occasions.")}</textarea></label>
+      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(s.image || "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1000&q=80")}" /></label>
       <div class="grid2">
         <label class="field"><span>Button 1 text</span><input class="input" name="cta1_text" value="${esc(s.cta1_text || "Shop the collection")}" /></label>
         <label class="field"><span>Button 1 link</span><input class="input" name="cta1_link" value="${esc(s.cta1_link || "#shop")}" /></label>
