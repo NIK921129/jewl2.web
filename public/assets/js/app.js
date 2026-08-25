@@ -7,7 +7,7 @@ let CART = store.get("cart", []), WISH = store.get("wish", []), COUPON = null;
 /* --------------------------- boot --------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
   $("#year").textContent = new Date().getFullYear();
-  document.documentElement.dataset.theme = store.get("theme", "dark");
+  document.documentElement.dataset.theme = store.get("theme", "light");
   $("#marquee").innerHTML = new Array(2).fill('<span>Free shipping over ₹999</span><span>7-day returns</span><span>24h dispatch</span><span>Secure checkout</span><span>Verified reviews</span><span>Coupon WELCOME10</span>').join("");
   bindUI();
   loadProducts();
