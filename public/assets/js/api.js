@@ -203,6 +203,8 @@ function demoApi(path, method, body) {
   if (seg[0] === "admin" && coll) {
     if (seg[1] === "users" && method === "GET")
       return db.users.map((u) => ({ ...u, orderCount: db.orders.filter((o) => o.email === u.email).length, spent: db.orders.filter((o) => o.email === u.email).reduce((s, o) => s + o.total, 0) }));
+    if (seg[1] === "orders" && seg[2] === "approvals" && method === "GET")
+      return db.orders.filter(o => o.status === "awaiting_approval");
     if (method === "GET") return db[coll];
     if (method === "POST" && seg[2] === "bulk") {
       body.ids.forEach((id) => {
