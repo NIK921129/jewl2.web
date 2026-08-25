@@ -37,10 +37,13 @@ function boot() {
   $("#logout").onclick = () => { auth.clear(); location.reload(); };
   $("#refreshBtn").onclick = () => go(PAGE);
   $("#burger").onclick = () => $("#side").classList.toggle("open");
-  $("#themeBtn2").onclick = () => {
-    const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = t; store.set("theme", t);
-  };
+  const themeToggle = $("#themeToggleBtn") || $("#themeBtn2");
+  if (themeToggle) {
+    themeToggle.onclick = () => {
+      const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = t; store.set("theme", t);
+    };
+  }
   $("#adminModal").onclick = (e) => e.target.id === "adminModal" && closeModal();
   connectSocket();
   go("dashboard");
