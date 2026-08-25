@@ -4,8 +4,10 @@
    Keep the trailing "/api".
    ========================================================= */
 window.NOVA_CONFIG = {
-  // e.g. "https://nova-store-api.onrender.com/api"
-  API_BASE_URL: "https://jewl2-web.onrender.com/api",
+  // Vercel proxies this path to the Render API, avoiding browser CORS restrictions.
+  API_BASE_URL: "/api",
+  // Optional: set this to the Render origin when live Socket.IO notifications are needed.
+  SOCKET_URL: "",
   CURRENCY: "\u20B9",
   STORE_NAME: "NOVA",
   // When the API is unreachable the site runs on built-in demo data

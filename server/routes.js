@@ -51,7 +51,10 @@ const adminOnly = [
   (req, res, next) =>
     req.user && req.user.role === "admin" ? next() : res.status(403).json({ error: "Admin only" }),
 ];
-const wrap = (fn) => (req, res) => fn(req, res).catch((e) => res.status(500).json({ error: e.message }));
+const wrap = (fn) => (req, res) => fn(req, res).catch((e) => {
+  const status = e.name === "ValidationError" || e.name === "CastError" ? 400 : 500;
+  res.status(status).json({ error: status === 400 ? "Please check the submitted information" : e.message });
+});
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* ---------------------------------- meta --------------------------------- */
@@ -122,6 +125,7 @@ router.get(
   "/auth/me",
   auth(true),
   wrap(async (req, res) => {
+    if (req.user.id === "admin") return res.status(403).json({ error: "Administrator profile cannot be edited here" });
     if (req.user.role === "admin" && req.user.id === "admin")
       return res.json({ name: "Administrator", email: ADMIN_ID, role: "admin" });
     const u = await User.findById(req.user.id);
@@ -194,6 +198,10 @@ router.post(
   auth(true),
   wrap(async (req, res) => {
     const { rating = 5, comment = "", name = "" } = req.body || {};
+    if (!Number.isFinite(+rating) || +rating < 1 || +rating > 5) return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    if (!(await Product.exists({ _id: req.params.id, active: true }))) return res.status(404).json({ error: "Product not found" });
+    if (await Review.exists({ product: req.params.id, email: req.user.email }))
+      return res.status(409).json({ error: "You have already reviewed this product" });
     const r = await Review.create({ product: req.params.id, email: req.user.email, name, rating, comment });
     const all = await Review.find({ product: req.params.id });
     const avg = all.reduce((s, x) => s + x.rating, 0) / (all.length || 1);
@@ -234,7 +242,19 @@ router.post(
       lines.push({ productId: p.id, title: p.title, price: p.price, qty, image: p.image });
     }
     if (!lines.length) return res.status(400).json({ error: "Your bag contains no available products" });
-    await Promise.all(lines.map((line) => Product.findByIdAndUpdate(line.productId, { $inc: { stock: -line.qty } })));
+    const reserved = [];
+    for (const line of lines) {
+      const product = await Product.findOneAndUpdate(
+        { _id: line.productId, active: true, stock: { $gte: line.qty } },
+        { $inc: { stock: -line.qty } },
+        { new: true }
+      );
+      if (!product) {
+        await Promise.all(reserved.map((item) => Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } })));
+        return res.status(409).json({ error: `${line.title} has just sold out. Please update your bag.` });
+      }
+      reserved.push(line);
+    }
     let discount = 0;
     if (coupon) {
       const c = await Coupon.findOne({ code: coupon.toUpperCase(), active: true });
@@ -374,11 +394,13 @@ router.delete("/admin/products/:id", adminOnly, wrap(async (req, res) => {
 }));
 router.post("/admin/products/bulk", adminOnly, wrap(async (req, res) => {
   const { ids = [], action, value } = req.body || {};
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: "Select at least one product" });
   if (action === "delete") await Product.deleteMany({ _id: { $in: ids } });
   if (action === "activate") await Product.updateMany({ _id: { $in: ids } }, { active: !!value });
   if (action === "feature") await Product.updateMany({ _id: { $in: ids } }, { featured: !!value });
-  if (action === "stock") await Product.updateMany({ _id: { $in: ids } }, { stock: +value || 0 });
-  if (action === "price") await Product.updateMany({ _id: { $in: ids } }, { price: +value || 0 });
+  if (action === "stock") await Product.updateMany({ _id: { $in: ids } }, { stock: Math.max(0, Number(value) || 0) });
+  if (action === "price") await Product.updateMany({ _id: { $in: ids } }, { price: Math.max(0, Number(value) || 0) });
+  if (!["delete", "activate", "feature", "stock", "price"].includes(action)) return res.status(400).json({ error: "Unknown bulk action" });
   res.json({ ok: true });
 }));
 

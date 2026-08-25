@@ -7,7 +7,7 @@ let CART = store.get("cart", []), WISH = store.get("wish", []), COUPON = null;
 /* --------------------------- boot --------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
   $("#year").textContent = new Date().getFullYear();
-  document.documentElement.dataset.theme = store.get("theme", "light");
+  document.documentElement.dataset.theme = store.get("theme", "dark");
   $("#marquee").innerHTML = new Array(2).fill('<span>Free shipping over ₹999</span><span>7-day returns</span><span>24h dispatch</span><span>Secure checkout</span><span>Verified reviews</span><span>Coupon WELCOME10</span>').join("");
   bindUI();
   loadProducts();
@@ -190,10 +190,20 @@ async function openProduct(id) {
           <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:14px">
             <b style="font-size:14px">Reviews</b>
             ${reviews.length ? reviews.map((r) => `<div style="margin-top:10px"><span class="stars">${stars(r.rating)}</span> <b style="font-size:13px">${esc(r.name || r.email || "Buyer")}</b><p style="color:var(--muted);font-size:13px">${esc(r.comment)}</p></div>`).join("") : '<p style="color:var(--muted);font-size:13px;margin-top:8px">No reviews yet.</p>'}
+            ${auth.token() ? `<form id="reviewForm" style="margin-top:16px"><label class="field"><span>Your rating</span><select class="input" name="rating"><option value="5">5 — Exceptional</option><option value="4">4 — Lovely</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></label><label class="field"><span>Your review</span><textarea class="input" name="comment" required maxlength="500" placeholder="Share your experience"></textarea></label><button class="btn btn-ghost btn-sm">Submit review</button></form>` : '<p style="color:var(--muted);font-size:12px;margin-top:14px">Sign in to leave a verified review.</p>'}
           </div>
         </div>
       </div>`;
     wireCards($("#prodBody"));
+    const reviewForm = $("#reviewForm");
+    if (reviewForm) reviewForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const form = new FormData(reviewForm);
+      try {
+        await api(`/products/${p._id}/reviews`, { method: "POST", body: { rating: +form.get("rating"), comment: form.get("comment"), name: auth.user()?.name || "" } });
+        toast("Thank you for your review"); openProduct(p._id);
+      } catch (error) { toast(error.message, "err"); }
+    };
     $$("#prodBody [data-close]").forEach((b) => (b.onclick = closeAll));
   } catch (e) { $("#prodBody").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
@@ -348,10 +358,15 @@ async function openCheckout() {
   closeAll(); open$("#checkoutModal");
   const t = cartTotals();
   const body = $("#checkoutBody");
-  body.innerHTML = `<div class="empty">Creating your order...</div>`;
+  body.innerHTML = `<div class="modal-head"><div><h3>Delivery details</h3><p>${CART.length} piece${CART.length === 1 ? "" : "s"} · ${money(t.total)}</p></div><button class="icon-btn" data-close>✕</button></div>
+    <form id="checkoutForm"><label class="field"><span>Full name</span><input class="input" name="name" required autocomplete="name" /></label><label class="field"><span>Phone number</span><input class="input" name="phone" required inputmode="tel" autocomplete="tel" /></label><label class="field"><span>Delivery address</span><textarea class="input" name="address" required autocomplete="street-address" placeholder="House / street, area, city, state and PIN code"></textarea></label><div class="sumline total"><span>Total</span><span>${money(t.total)}</span></div><button class="btn btn-primary btn-block">Continue to secure payment</button></form>`;
   $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = closeAll));
-  try {
-    const order = await api("/orders", { method: "POST", body: { items: CART.map((c) => ({ productId: c.productId, qty: c.qty })), coupon: COUPON?.code || "" } });
+  $("#checkoutForm").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const button = event.target.querySelector("button"); button.disabled = true; button.textContent = "Preparing payment…";
+    try {
+      const order = await api("/orders", { method: "POST", body: { items: CART.map((c) => ({ productId: c.productId, qty: c.qty })), coupon: COUPON?.code || "", paymentMethod: "upi", shippingAddress: { name: form.get("name"), phone: form.get("phone"), address: form.get("address") } } });
     const upiId = await api("/settings/upi");
     if (!upiId) throw new Error("UPI payment is not configured by the store owner.");
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${upiId}&pn=NOVA%20Store&am=${order.total}&tn=Order%20${order.orderNo}`;
@@ -387,6 +402,7 @@ async function openCheckout() {
     body.innerHTML = `<div class="empty">${esc(err.message)}<br><br><button class="btn btn-ghost" data-close>Close</button></div>`;
     $$("#checkoutBody [data-close]").forEach((b) => (b.onclick = closeAll));
   }
+  };
 }
 
 /* --------------------------- modal utils --------------------------- */

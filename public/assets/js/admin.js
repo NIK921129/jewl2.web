@@ -4,7 +4,7 @@
 let PAGE = "dashboard", STATS = null, CACHE = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.documentElement.dataset.theme = store.get("theme", "light");
+  document.documentElement.dataset.theme = store.get("theme", "dark");
   $("#gateForm").onsubmit = gateSubmit;
   $$("#gate .tabs button").forEach((b) => (b.onclick = () => {
     $$("#gate .tabs button").forEach((x) => x.classList.toggle("active", x === b));
@@ -77,7 +77,8 @@ async function go(p) {
 }
 
 function connectSocket() {
-  const socket = io(API.replace("/api", ""), { auth: { token: auth.token() } });
+  if (!CFG.SOCKET_URL) return;
+  const socket = io(CFG.SOCKET_URL, { auth: { token: auth.token() } });
   socket.on("connect", () => console.log("Live socket connected"));
   socket.on("new_order", (order) => {
     toast(`📦 New order #${order.orderNo} for ${money(order.total)}`);
