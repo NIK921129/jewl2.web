@@ -59,6 +59,7 @@ const TITLES = {
   payments: ["Payments", "Configure payment methods"],
   approvals: ["Payment Approvals", "Verify manual payments"],
   chat: ["Live Chat", "Customer support chat widget"],
+  dataplay: ["Data Play", "AI-assisted catalogue controls and structured store records"],
   users: ["Customers & IDs", "Create logins, reset passwords, block users"],
   bags: ["Bag lists", "What customers are carrying right now"],
   messages: ["Messages", "Contact form inbox"],
@@ -632,6 +633,51 @@ RENDER.settings = async () => {
     } catch (e) {
       toast(`API is unreachable. Error: ${e.message}`, "err");
     }
+  };
+};
+
+/* ---- 14. Data Play ---- */
+RENDER.dataplay = async () => {
+  const status = await api("/admin/data-play/status");
+  let plan = null;
+  $("#page").innerHTML = `
+    <div class="panel data-play">
+      <div class="data-play-head"><div><p class="eyebrow">Admin-only workspace</p><h3>Catalogue command center</h3><p>Ask for structured catalogue updates, then review and apply the approved actions.</p></div><span class="pill ${status.configured ? "paid" : "pending"}">${status.configured ? `Gemini ready · ${esc(status.model)}` : "Gemini key required"}</span></div>
+      ${status.configured ? `<form id="aiCommandForm"><label class="field"><span>Command</span><textarea class="input" name="prompt" required maxlength="5000" placeholder="Example: Create three pearl earrings under ₹6,000 using only the image URLs I provide. Return a structured plan."></textarea></label><button class="btn btn-primary">Generate structured plan</button></form>` : `<div class="data-play-notice"><b>Secure setup required</b><p>Add <code>GEMINI_API_KEY</code> to your Render environment variables, then redeploy the backend. The key is never saved in or sent to the browser.</p></div>`}
+      <div id="aiPlan" class="ai-plan"></div>
+    </div>
+    <div class="panel"><div class="toolbar"><div style="flex:1"><p class="eyebrow">Structured records</p><h3>Live database view</h3></div><select class="input" id="dataCollection" style="width:auto"><option value="products">Products</option><option value="orders">Orders</option><option value="customers">Customers</option><option value="coupons">Coupons</option><option value="reviews">Reviews</option><option value="messages">Messages</option></select><button class="btn btn-ghost btn-sm" id="refreshRecords">Refresh</button></div><div id="dataRecords"></div></div>`;
+
+  const records = async () => {
+    const data = await api(`/admin/data-play/records?collection=${encodeURIComponent($("#dataCollection").value)}`);
+    const rows = data.rows || [];
+    if (!rows.length) return $("#dataRecords").innerHTML = '<div class="empty">No records in this collection yet.</div>';
+    const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))].filter((key) => !["passwordHash", "__v"].includes(key)).slice(0, 9);
+    $("#dataRecords").innerHTML = table(columns, rows.map((row) => columns.map((key) => {
+      const value = typeof row[key] === "object" ? JSON.stringify(row[key]) : row[key];
+      return `<span class="data-cell">${esc(String(value ?? "—"))}</span>`;
+    })));
+  };
+  $("#dataCollection").onchange = records;
+  $("#refreshRecords").onclick = records;
+  await records();
+  const commandForm = $("#aiCommandForm");
+  if (!commandForm) return;
+  commandForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const button = commandForm.querySelector("button"); button.disabled = true; button.textContent = "Planning…";
+    try {
+      plan = await api("/admin/data-play/command", { method: "POST", body: { prompt: new FormData(commandForm).get("prompt") } });
+      $("#aiPlan").innerHTML = `<div class="ai-plan-card"><div><p class="eyebrow">Structured response</p><b>${esc(plan.summary || "Plan ready")}</b></div><pre>${esc(JSON.stringify(plan.actions || [], null, 2))}</pre>${plan.actions?.length ? '<button class="btn btn-primary btn-sm" id="applyAiPlan">Apply these actions</button>' : ""}</div>`;
+      const apply = $("#applyAiPlan");
+      if (apply) apply.onclick = async () => {
+        if (!confirm(`Apply ${plan.actions.length} approved action(s) to the live database?`)) return;
+        apply.disabled = true; apply.textContent = "Applying…";
+        try { const result = await api("/admin/data-play/apply", { method: "POST", body: { actions: plan.actions } }); toast(`${result.results.filter((item) => item.ok).length} action(s) applied`); await records(); }
+        catch (error) { toast(error.message, "err"); apply.disabled = false; apply.textContent = "Apply these actions"; }
+      };
+    } catch (error) { toast(error.message, "err"); }
+    finally { button.disabled = false; button.textContent = "Generate structured plan"; }
   };
 };
 

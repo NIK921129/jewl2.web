@@ -13,6 +13,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "123456";
 const CURRENCY = process.env.CURRENCY || "INR";
 const FREE_SHIPPING_OVER = Number(process.env.FREE_SHIPPING_OVER || 999);
 const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 49);
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, path.join(__dirname, "uploads")),
@@ -488,6 +490,91 @@ router.put("/admin/settings", adminOnly, wrap(async (req, res) => {
   const { key, value } = req.body || {};
   if (!key || value === undefined) return res.status(400).json({ error: "Key and value are required" });
   res.json(await Setting.findOneAndUpdate({ key }, { value }, { upsert: true, new: true }));
+}));
+
+/* -------------------------- Data Play / Gemini ------------------------- */
+const aiProductFields = ["title", "description", "category", "brand", "price", "compareAtPrice", "stock", "sku", "image", "gallery", "tags", "featured", "active"];
+const aiActionSchema = {
+  type: "OBJECT",
+  properties: {
+    summary: { type: "STRING" },
+    actions: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          type: { type: "STRING", enum: ["create_product", "update_product", "update_storefront"] },
+          data: { type: "OBJECT" },
+        },
+        required: ["type", "data"],
+      },
+    },
+  },
+  required: ["summary", "actions"],
+};
+const cleanAiProduct = (value) => Object.fromEntries(Object.entries(value || {}).filter(([key]) => aiProductFields.includes(key)));
+
+router.get("/admin/data-play/status", adminOnly, (_req, res) =>
+  res.json({ configured: Boolean(GEMINI_API_KEY), model: GEMINI_MODEL })
+);
+
+router.get("/admin/data-play/records", adminOnly, wrap(async (req, res) => {
+  const map = { products: Product, orders: Order, customers: User, coupons: Coupon, reviews: Review, messages: Message };
+  const collection = Object.prototype.hasOwnProperty.call(map, req.query.collection) ? req.query.collection : "products";
+  const Model = map[collection];
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
+  const rows = (await Model.find().sort({ createdAt: -1 }).limit(limit).lean()).map((row) => {
+    const { passwordHash, __v, ...safe } = row;
+    return safe;
+  });
+  res.json({ collection, count: rows.length, rows });
+}));
+
+router.post("/admin/data-play/command", adminOnly, wrap(async (req, res) => {
+  if (!GEMINI_API_KEY) return res.status(503).json({ error: "Gemini is not configured. Add GEMINI_API_KEY to your Render environment variables." });
+  const prompt = String(req.body?.prompt || "").trim();
+  if (!prompt || prompt.length > 5000) return res.status(400).json({ error: "Enter a command of up to 5,000 characters" });
+  const products = await Product.find().sort({ createdAt: -1 }).limit(50).lean();
+  const context = products.map(({ _id, title, category, price, stock, image }) => ({ id: String(_id), title, category, price, stock, image }));
+  const instruction = `You are a jewellery-store catalogue assistant. Return only JSON matching the provided schema.\n\nAllowed actions: create_product (requires title, category, price and image), update_product (requires id and fields), update_storefront (allowed homepage fields only). Never create delete actions, change users/orders, claim an image exists, or invent an image URL. If the request needs research, explain it in summary and return no actions. Existing products: ${JSON.stringify(context)}\n\nAdmin request: ${prompt}`;
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
+    body: JSON.stringify({ contents: [{ parts: [{ text: instruction }] }], generationConfig: { responseMimeType: "application/json", responseSchema: aiActionSchema } }),
+  });
+  const payload = await response.json();
+  if (!response.ok) return res.status(502).json({ error: payload?.error?.message || "Gemini request failed" });
+  const text = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("");
+  let plan;
+  try { plan = JSON.parse(text); } catch { return res.status(502).json({ error: "Gemini returned an invalid structured response" }); }
+  res.json({ summary: String(plan.summary || ""), actions: Array.isArray(plan.actions) ? plan.actions.slice(0, 10) : [] });
+}));
+
+router.post("/admin/data-play/apply", adminOnly, wrap(async (req, res) => {
+  const actions = Array.isArray(req.body?.actions) ? req.body.actions.slice(0, 10) : [];
+  if (!actions.length) return res.status(400).json({ error: "No approved actions to apply" });
+  const results = [];
+  for (const action of actions) {
+    if (action.type === "create_product") {
+      const data = cleanAiProduct(action.data);
+      if (!data.title || !data.category || !Number.isFinite(Number(data.price)) || !data.image) { results.push({ type: action.type, ok: false, error: "Missing title, category, price, or image" }); continue; }
+      data.price = Number(data.price); data.stock = Math.max(0, Number(data.stock) || 0);
+      results.push({ type: action.type, ok: true, record: await Product.create(data) });
+    } else if (action.type === "update_product") {
+      const id = action.data?.id;
+      const data = cleanAiProduct(action.data?.fields);
+      if (!id || !Object.keys(data).length) { results.push({ type: action.type, ok: false, error: "Missing product id or fields" }); continue; }
+      const record = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+      results.push(record ? { type: action.type, ok: true, record } : { type: action.type, ok: false, error: "Product not found" });
+    } else if (action.type === "update_storefront") {
+      const permitted = ["pill", "headline", "subheadline", "image", "cta1_text", "cta1_link", "cta2_text", "cta2_link"];
+      const existing = await Setting.findOne({ key: "storefront" });
+      const value = { ...(existing?.value || {}), ...Object.fromEntries(Object.entries(action.data || {}).filter(([key]) => permitted.includes(key))) };
+      await Setting.findOneAndUpdate({ key: "storefront" }, { value }, { upsert: true, new: true });
+      results.push({ type: action.type, ok: true, record: value });
+    } else results.push({ type: action.type || "unknown", ok: false, error: "Action is not allowed" });
+  }
+  res.json({ results });
 }));
 
 // data export (CSV / JSON download)
