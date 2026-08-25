@@ -421,7 +421,7 @@ RENDER.approvals = async () => {
         </div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start">
-        <a href="${o.paymentScreenshot}" target="_blank"><img src="${o.paymentScreenshot}" style="max-height:200px;border-radius:4px;cursor:zoom-in" alt="Payment screenshot"></a>
+        <a href="${esc(assetUrl(o.paymentScreenshot))}" target="_blank" rel="noopener"><img src="${esc(assetUrl(o.paymentScreenshot))}" style="max-height:200px;border-radius:4px;cursor:zoom-in" alt="Payment screenshot"></a>
         <div style="font-size:13px;line-height:1.6">
           <b>Shipping Address:</b><br>
           ${Object.entries(o.shippingAddress || {}).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join("<br>") || "Not provided"}

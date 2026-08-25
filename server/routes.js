@@ -232,8 +232,9 @@ router.post(
       if (p.stock < qty) return res.status(400).json({ error: `${p.title} does not have enough stock` });
       subtotal += p.price * qty;
       lines.push({ productId: p.id, title: p.title, price: p.price, qty, image: p.image });
-      await Product.findByIdAndUpdate(p.id, { $inc: { stock: -qty } });
     }
+    if (!lines.length) return res.status(400).json({ error: "Your bag contains no available products" });
+    await Promise.all(lines.map((line) => Product.findByIdAndUpdate(line.productId, { $inc: { stock: -line.qty } })));
     let discount = 0;
     if (coupon) {
       const c = await Coupon.findOne({ code: coupon.toUpperCase(), active: true });
@@ -296,6 +297,9 @@ router.post(
     const o = await Order.findOne({ _id: req.params.id, email: req.user.email });
     if (!o) return res.status(404).json({ error: "Order not found" });
     if (["shipped", "delivered"].includes(o.status)) return res.status(400).json({ error: "Order already shipped" });
+    if (o.status !== "cancelled") {
+      await Promise.all(o.items.map((line) => Product.findByIdAndUpdate(line.productId, { $inc: { stock: line.qty } })));
+    }
     o.status = "cancelled";
     await o.save();
     res.json(o);
@@ -390,8 +394,17 @@ router.get("/admin/orders/approvals", adminOnly, wrap(async (_req, res) => {
   res.json(await Order.find({ status: "awaiting_approval" }).sort({ createdAt: -1 }));
 }));
 
-router.put("/admin/orders/:id", adminOnly, wrap(async (req, res) =>
-  res.json(await Order.findByIdAndUpdate(req.params.id, clean(req.body), { new: true }))));
+router.put("/admin/orders/:id", adminOnly, wrap(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  const update = clean(req.body);
+  if (update.status === "cancelled" && order.status !== "cancelled") {
+    await Promise.all(order.items.map((line) => Product.findByIdAndUpdate(line.productId, { $inc: { stock: line.qty } })));
+  }
+  Object.assign(order, update);
+  await order.save();
+  res.json(order);
+}));
 router.delete("/admin/orders/:id", adminOnly, wrap(async (req, res) => {
   await Order.findByIdAndDelete(req.params.id);
   res.json({ ok: true });

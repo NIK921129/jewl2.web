@@ -3,6 +3,7 @@
    ========================================================= */
 const CFG = window.NOVA_CONFIG;
 const API = CFG.API_BASE_URL.replace(/\/$/, "");
+const assetUrl = (value) => (value && String(value).startsWith("/") ? new URL(value, API).href : value || "");
 
 /* ------------------------------ helpers ------------------------------ */
 const $ = (s, r = document) => r.querySelector(s);
