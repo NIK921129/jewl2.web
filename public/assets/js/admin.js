@@ -211,7 +211,10 @@ function productForm(p, inline = false) {
         <label class="field"><span>Stock</span><input class="input" name="stock" type="number" value="${p?.stock ?? 0}" /></label>
         <label class="field"><span>Rating</span><input class="input" name="rating" type="number" step="0.1" max="5" value="${p?.rating ?? 4.5}" /></label>
       </div>
-      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(p?.image || "")}" placeholder="https://…" /></label>
+      <label class="field"><span>Main image URL *</span><input class="input" name="image" required value="${esc(p?.image || "")}" placeholder="https://example.com/necklace.jpg" /></label>
+      <div class="image-preview-wrap" id="productImagePreviewWrap" ${p?.image ? "" : "hidden"}><img id="productImagePreview" src="${esc(p?.image || "")}" alt="Product image preview" /></div>
+      <label class="field"><span>Additional image URLs</span><textarea class="input" name="gallery" placeholder="One image URL per line">${esc((p?.gallery || []).join("\n"))}</textarea><small class="field-help">Add optional close-ups or alternate angles. They appear in the product gallery.</small></label>
+      <div class="gallery-preview" id="galleryPreview"></div>
       <label class="field"><span>Description</span><textarea class="input" name="description">${esc(p?.description || "")}</textarea></label>
       <label class="field"><span>Tags (comma separated)</span><input class="input" name="tags" value="${esc((p?.tags || []).join(", "))}" /></label>
       <div style="display:flex;gap:18px;margin:10px 0 18px;font-size:14px">
@@ -222,18 +225,37 @@ function productForm(p, inline = false) {
     </form>`;
   if (inline) $("#page").innerHTML = `<div class="panel" style="max-width:820px">${html}</div>`;
   else openModal(`<div class="modal-head"><h3>Edit product</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>${html}`, true);
-  $("#pf").onsubmit = async (e) => {
+  const form = $("#pf");
+  const mainImage = form.elements.image;
+  const previewWrap = $("#productImagePreviewWrap");
+  const preview = $("#productImagePreview");
+  const galleryInput = form.elements.gallery;
+  const isImageUrl = (url) => /^(https?:\/\/|\/)/i.test(String(url).trim());
+  const galleryUrls = () => String(galleryInput.value || "").split(/\r?\n/).map((url) => url.trim()).filter(Boolean);
+  const syncImages = () => {
+    const url = mainImage.value.trim();
+    previewWrap.hidden = !url;
+    preview.src = url || "";
+    $("#galleryPreview").innerHTML = galleryUrls().filter(isImageUrl).map((url) => `<img src="${esc(url)}" alt="Gallery image preview">`).join("");
+  };
+  mainImage.oninput = syncImages;
+  galleryInput.oninput = syncImages;
+  preview.onerror = () => { previewWrap.hidden = true; };
+  syncImages();
+  form.onsubmit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
+    const gallery = galleryUrls();
+    if (!isImageUrl(f.image) || gallery.some((url) => !isImageUrl(url))) return toast("Use a valid image URL for each image", "err");
     const body = {
       ...f,
+      image: f.image.trim(), gallery,
       price: +f.price,
       compareAtPrice: +f.compareAtPrice,
       stock: +f.stock,
       rating: +f.rating,
-      tags: f.tags ? f.tags.split(",").map((t) => t.trim()) : [], featured: !!f.featured, active: !!f.active
+      tags: f.tags ? f.tags.split(",").map((t) => t.trim()).filter(Boolean) : [], featured: !!f.featured, active: !!f.active
     };
-    delete body.images;
     try {
       if (p) await api("/admin/products/" + p._id, { method: "PUT", body });
       else await api("/admin/products", { method: "POST", body });
@@ -251,7 +273,8 @@ RENDER.storefront = async () => {
       <label class="field"><span>Pill text</span><input class="input" name="pill" value="${esc(s.pill || "New season drop")}" /></label>
       <label class="field"><span>Headline</span><textarea class="input" name="headline">${esc(s.headline || "Jewellery that feels <em>made for you</em>.")}</textarea></label>
       <label class="field"><span>Sub-headline</span><textarea class="input" name="subheadline">${esc(s.subheadline || "A thoughtful collection of necklaces, rings, earrings and bracelets — designed for everyday elegance, meaningful gifting and unforgettable occasions.")}</textarea></label>
-      <label class="field"><span>Image URL</span><input class="input" name="image" value="${esc(s.image || "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1000&q=80")}" /></label>
+      <label class="field"><span>Hero image URL</span><input class="input" name="image" value="${esc(s.image || "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1000&q=80")}" /></label>
+      <div class="image-preview-wrap"><img id="heroImagePreview" src="${esc(s.image || "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1000&q=80")}" alt="Hero image preview" /></div>
       <div class="grid2">
         <label class="field"><span>Button 1 text</span><input class="input" name="cta1_text" value="${esc(s.cta1_text || "Shop the collection")}" /></label>
         <label class="field"><span>Button 1 link</span><input class="input" name="cta1_link" value="${esc(s.cta1_link || "#shop")}" /></label>
@@ -268,6 +291,7 @@ RENDER.storefront = async () => {
     toast("Storefront updated");
     go("storefront");
   };
+  $("#sf").elements.image.oninput = (e) => { $("#heroImagePreview").src = e.target.value.trim(); };
 };
 
 /* ---- 5. inventory ---- */
