@@ -89,7 +89,7 @@ function demoDb() {
         reviewsCount: Math.floor(Math.random() * 60), views: Math.floor(Math.random() * 500),
         createdAt: new Date().toISOString(),
       })),
-      users: [], orders: [], reviews: [], messages: [],
+      users: [], orders: [], reviews: [], messages: [], settings: {},
       coupons: [
         { _id: uid(), code: "WELCOME10", type: "percent", value: 10, minOrder: 0, active: true, usedCount: 0 },
         { _id: uid(), code: "NOVA500", type: "flat", value: 500, minOrder: 2999, active: true, usedCount: 0 },
@@ -123,6 +123,11 @@ function demoApi(path, method, body) {
     return { token: "demo." + u._id, user: u };
   }
   if (path === "/auth/me") return me;
+
+  // Public storefront settings
+  if (path === "/settings/storefront") return db.settings?.storefront || {};
+  if (path === "/settings/chat_widget") return db.settings?.chat_widget || {};
+  if (path === "/settings/upi") return db.settings?.upi_id || "";
 
   // catalogue
   if (seg[0] === "products" && seg.length === 1) {
@@ -214,7 +219,15 @@ function demoApi(path, method, body) {
     if (method === "PUT") { const d = db[coll].find((x) => x._id === seg[2]); Object.assign(d || {}, body); return done(d); }
     if (method === "DELETE") { db[coll] = db[coll].filter((x) => x._id !== seg[2]); return done({ ok: true }); }
   }
+  if (path === "/admin/settings") {
+    db.settings ||= {};
+    if (method === "GET") return Object.entries(db.settings).map(([key, value]) => ({ _id: key, key, value }));
+    if (method === "PUT") {
+      if (!body?.key) throw new Error("Setting key is required");
+      db.settings[body.key] = body.value;
+      return done({ _id: body.key, key: body.key, value: body.value });
+    }
+  }
   if (path.startsWith("/admin/export/")) return db[seg[2]] || [];
-  if (path === "/admin/settings") return [];
   return {};
 }

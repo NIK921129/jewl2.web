@@ -11,11 +11,19 @@ const jwt = require("jsonwebtoken");
 const routes = require("./routes");
 const { Product, Coupon, Setting } = require("./models");
 
+const allowedOrigins = (process.env.CORS_ORIGIN || "*")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+// `cors` treats ["*"] as a literal domain rather than a wildcard. Use true to
+// reflect the request origin when public cross-origin access is intended.
+const corsOrigin = allowedOrigins.includes("*") ? true : allowedOrigins;
+
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(
   cors({
-    origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()),
+    origin: corsOrigin,
   })
 );
 
@@ -25,7 +33,7 @@ app.use("/uploads", express.static(uploadsDir));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: (process.env.CORS_ORIGIN || "*").split(",").map((s) => s.trim()) },
+  cors: { origin: corsOrigin },
 });
 
 // Middleware to pass io instance to routes
