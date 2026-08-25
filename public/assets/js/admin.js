@@ -5,12 +5,17 @@ let PAGE = "dashboard", STATS = null, CACHE = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   document.documentElement.dataset.theme = store.get("theme", "dark");
-  $("#gateForm").onsubmit = gateSubmit;
+  const gateForm = $("#gateForm");
+  if (gateForm) {
+    gateForm.onsubmit = gateSubmit;
+  }
   $$("#gate .tabs button").forEach((b) => (b.onclick = () => {
     $$("#gate .tabs button").forEach((x) => x.classList.toggle("active", x === b));
-    $("#gName").style.display = b.dataset.tab === "signup" ? "block" : "none";
-    $("#gateBtn").textContent = b.dataset.tab === "signup" ? "Create account" : "Login";
-    $("#gateForm").dataset.tab = b.dataset.tab;
+    const gName = $("#gName");
+    if (gName) gName.style.display = b.dataset.tab === "signup" ? "block" : "none";
+    const gateBtn = $("#gateBtn");
+    if (gateBtn) gateBtn.textContent = b.dataset.tab === "signup" ? "Create account" : "Login";
+    if (gateForm) gateForm.dataset.tab = b.dataset.tab;
   }));
   if (auth.token() && auth.isAdmin()) boot();
 });
@@ -19,32 +24,55 @@ async function gateSubmit(e) {
   e.preventDefault();
   const tab = e.target.dataset.tab || "login";
   const f = Object.fromEntries(new FormData(e.target));
-  const btn = $("#gateBtn"); btn.disabled = true; btn.textContent = "Please wait…";
+  const btn = $("#gateBtn"); 
+  if (btn) { btn.disabled = true; btn.textContent = "Please wait…"; }
   try {
     const d = await api("/auth/" + tab, { method: "POST", body: { name: f.name, email: f.email.trim(), password: f.password } });
     auth.save(d.token, d.user);
     if (d.user.role !== "admin") { auth.clear(); throw new Error("This account is not an administrator"); }
     boot();
   } catch (err) { toast(err.message, "err"); }
-  finally { btn.disabled = false; btn.textContent = tab === "signup" ? "Create account" : "Login"; }
+  finally { if (btn) { btn.disabled = false; btn.textContent = tab === "signup" ? "Create account" : "Login"; } }
 }
 
 function boot() {
-  $("#gate").classList.add("hide");
-  $("#app").classList.remove("hide");
-  $("#whoami").textContent = (auth.user() || {}).email || "admin";
+  const gate = $("#gate");
+  if (gate) gate.classList.add("hide");
+  const app = $("#app");
+  if (app) app.classList.remove("hide");
+  
+  const whoami = $("#whoami");
+  if (whoami) whoami.textContent = (auth.user() || {}).email || "admin";
+  
   $$("#menu a[data-page]").forEach((a) => (a.onclick = () => go(a.dataset.page)));
-  $("#logout").onclick = () => { auth.clear(); location.reload(); };
-  $("#refreshBtn").onclick = () => go(PAGE);
-  $("#burger").onclick = () => $("#side").classList.toggle("open");
+  
+  const logout = $("#logout");
+  if (logout) logout.onclick = () => { auth.clear(); location.reload(); };
+  
+  const refreshBtn = $("#refreshBtn");
+  if (refreshBtn) refreshBtn.onclick = () => go(PAGE);
+  
+  const burger = $("#burger");
+  if (burger) burger.onclick = () => {
+    const side = $("#side");
+    if (side) side.classList.toggle("open");
+  };
+
+  // Safe theme toggle mapping for both old and new IDs
   const themeToggle = $("#themeToggleBtn") || $("#themeBtn2");
   if (themeToggle) {
     themeToggle.onclick = () => {
       const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-      document.documentElement.dataset.theme = t; store.set("theme", t);
+      document.documentElement.dataset.theme = t; 
+      store.set("theme", t);
     };
   }
-  $("#adminModal").onclick = (e) => e.target.id === "adminModal" && closeModal();
+
+  const adminModal = $("#adminModal");
+  if (adminModal) {
+    adminModal.onclick = (e) => e.target.id === "adminModal" && closeModal();
+  }
+
   connectSocket();
   go("dashboard");
 }
@@ -73,11 +101,20 @@ const TITLES = {
 async function go(p) {
   PAGE = p;
   $$("#menu a").forEach((a) => a.classList.toggle("active", a.dataset.page === p));
-  $("#pageTitle").textContent = TITLES[p][0];
-  $("#pageSub").textContent = TITLES[p][1];
-  $("#side").classList.remove("open");
-  $("#page").innerHTML = '<div class="empty">Loading…</div>';
-  try { await RENDER[p](); } catch (e) { $("#page").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  
+  const pageTitle = $("#pageTitle");
+  if (pageTitle) pageTitle.textContent = TITLES[p][0];
+  
+  const pageSub = $("#pageSub");
+  if (pageSub) pageSub.textContent = TITLES[p][1];
+  
+  const side = $("#side");
+  if (side) side.classList.remove("open");
+  
+  const pageContainer = $("#page");
+  if (pageContainer) pageContainer.innerHTML = '<div class="empty">Loading…</div>';
+  
+  try { await RENDER[p](); } catch (e) { if (pageContainer) pageContainer.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
 function connectSocket() {
