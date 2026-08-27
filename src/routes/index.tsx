@@ -1,19 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+// The storefront is a plain HTML/CSS/JS app living in /public (index.html).
+// Vercel serves it at "/" directly. Inside this dev preview the framework
+// owns "/", so we hand the visitor straight over to the static store.
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NOVA — Modern Tech & Lifestyle Store" },
+      { title: "NOVA — Fine Jewellery Store" },
       {
         name: "description",
         content:
-          "Shop headphones, wearables, computing gear and home essentials at NOVA. Free shipping, easy returns, secure checkout.",
+          "NOVA is a full commerce storefront with cart, checkout, coupons and an admin control center.",
       },
-      { property: "og:title", content: "NOVA — Modern Tech & Lifestyle Store" },
+      { property: "og:title", content: "NOVA — Fine Jewellery Store" },
       {
         property: "og:description",
-        content: "Curated tech and lifestyle products with fast delivery and secure checkout.",
+        content: "Shop the NOVA collection: necklaces, rings, earrings and bracelets.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -22,15 +25,14 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// The real site is plain HTML/CSS/JS in /public (deployed to Vercel).
-// This route just forwards the dev preview to it.
 function Index() {
   useEffect(() => {
     window.location.replace("/index.html");
   }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-      Opening the store…
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <p className="text-sm text-muted-foreground">Opening the store…</p>
     </div>
   );
 }
