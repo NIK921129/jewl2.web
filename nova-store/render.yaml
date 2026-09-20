@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: nova-store-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_ID
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: CURRENCY
+        value: INR
+      - key: SHIPPING_FEE
+        value: "49"
+      - key: FREE_SHIPPING_OVER
+        value: "999"
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+    # A persistent disk keeps payment screenshots after every redeploy.
+    # Disks require a paid instance type; remove this block on the free plan.
+    disk:
+      name: nova-uploads
+      mountPath: /var/data
+      sizeGB: 1

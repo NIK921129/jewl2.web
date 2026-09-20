@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NOVA — Fine Jewellery for Every Occasion</title>
+<meta name="description" content="Shop necklaces, rings, earrings and bracelets at NOVA. Free shipping over ₹999, easy returns and secure checkout." />
+<meta property="og:title" content="NOVA — Fine Jewellery for Every Occasion" />
+<meta property="og:description" content="Curated jewellery, thoughtfully designed for gifting and everyday elegance." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+
+<div class="announcement"><span>Complimentary insured delivery across India</span><span>•</span><span>Signature gift wrapping with every order</span><span>•</span><span>Private styling appointments available</span></div>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="logo" href="/"><i></i>NOVA</a>
+    <nav class="nav-links">
+      <a href="#shop">Collection</a><a href="#deals">Highlights</a><a href="#features">Our promise</a><a href="#contact">Contact</a>
+    </nav>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Search products, brands…" />
+    </div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">◐</button>
+      <button class="icon-btn" id="wishBtn" title="Wishlist">♡<span class="badge-count hide" id="wishCount">0</span></button>
+      <button class="icon-btn" id="cartBtn" title="Bag">🛍<span class="badge-count hide" id="cartCount">0</span></button>
+      <button class="btn btn-ghost btn-sm" id="accountBtn">Account</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      <span class="pill paid">The new collection</span>
+      <h1>Made to become <em>part of your story.</em></h1>
+      <p>Fine jewellery with a quiet point of view: considered details, lasting materials and pieces you'll reach for every day.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#shop">Explore the collection</a>
+        <a class="btn btn-ghost" href="#deals">Discover new arrivals</a>
+      </div>
+      <div class="hero-stats">
+        <div><b id="statProducts">—</b><span>Products</span></div>
+        <div><b>4.9★</b><span>Collector rating</span></div>
+        <div><b>24h</b><span>Careful dispatch</span></div>
+        <div><b>7-day</b><span>Easy returns</span></div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1000&q=80" alt="Gold jewellery on a clean background" />
+    </div>
+  </div>
+</section>
+
+<div class="marquee"><div id="marquee"></div></div>
+
+<section class="signature">
+  <div class="wrap signature-grid">
+    <div class="signature-copy"><p class="eyebrow">The NOVA signature</p><h2>Objects of quiet fascination.</h2><p>Each piece begins with proportion, light and a feeling worth holding on to. Made for the moments that become part of you.</p><a class="text-link" href="#shop">Meet the collection <span>→</span></a></div>
+    <div class="signature-card signature-card-tall"><img src="https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=900&q=85" alt="Fine jewellery styling" /><span>Everyday heirlooms</span></div>
+    <div class="signature-card"><img src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85" alt="Statement ring" /><span>Made to mark a moment</span></div>
+  </div>
+</section>
+
+<!-- DEALS -->
+<section id="deals">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">A little something special</p><h2>Collection highlights</h2><p>Selected pieces, thoughtfully priced.</p></div>
+      <span class="pill pending" id="dealTimer">--:--:--</span></div>
+    <div class="grid" id="dealsGrid"></div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section id="shop">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">Designed to be worn</p><h2>The collection</h2><p id="resultCount">Loading catalogue…</p></div></div>
+    <div class="toolbar">
+      <div class="filters" id="cats"></div>
+      <select class="input" id="sort" style="width:auto">
+        <option value="new">Newest</option>
+        <option value="popular">Most popular</option>
+        <option value="priceAsc">Price: low to high</option>
+        <option value="priceDesc">Price: high to low</option>
+        <option value="rating">Top rated</option>
+      </select>
+      <select class="input" id="priceRange" style="width:auto">
+        <option value="">Any price</option>
+        <option value="0-2000">Under 2,000</option>
+        <option value="2000-5000">2,000 – 5,000</option>
+        <option value="5000-10000">5,000 – 10,000</option>
+        <option value="10000-999999">10,000+</option>
+      </select>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">The NOVA promise</p><h2>Luxury, made simple</h2><p>Every detail considered, from your first look to delivery.</p></div></div>
+    <div class="features">
+      <div class="feature"><div class="em">🚚</div><b>Free shipping over ₹999</b><p>Dispatched within 24 hours from our warehouse.</p></div>
+      <div class="feature"><div class="em">🔐</div><b>Login only at checkout</b><p>Browse and build your bag freely — sign in when you buy.</p></div>
+      <div class="feature"><div class="em">↩️</div><b>7-day easy returns</b><p>Changed your mind? Send it back, no questions.</p></div>
+      <div class="feature"><div class="em">🏷️</div><b>Coupons that work</b><p>Try WELCOME10 or NOVA500 at checkout.</p></div>
+      <div class="feature"><div class="em">⭐</div><b>Real reviews</b><p>Ratings from verified buyers only.</p></div>
+      <div class="feature"><div class="em">📦</div><b>Live order tracking</b><p>Track every order from your account page.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div><h2>Loved by 12,000+ shoppers</h2></div></div>
+    <div class="split">
+      <div class="quote"><div class="stars">★★★★★</div><p>"Ordered on a Friday, it arrived Sunday morning. The pendant is even more beautiful in person."</p><b>Ananya R.</b></div>
+      <div class="quote"><div class="stars">★★★★★</div><p>"Checkout took twenty seconds and I didn't need an account until the very end. More stores should do this."</p><b>Karan M.</b></div>
+      <div class="quote"><div class="stars">★★★★☆</div><p>"The support team helped me choose the perfect earrings for a gift. Such an easy experience."</p><b>Meera S.</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER + CONTACT -->
+<section id="contact">
+  <div class="wrap split">
+    <div class="newsletter">
+      <h2>Get 10% off your first order</h2>
+      <p style="color:var(--muted);font-size:14px">Drop your email — we send one email a week, max.</p>
+      <form id="newsForm"><input class="input" type="email" placeholder="you@email.com" required /><button class="btn btn-primary">Subscribe</button></form>
+    </div>
+    <div class="newsletter" style="text-align:left">
+      <h2 style="font-size:22px">Talk to us</h2>
+      <form id="contactForm" style="display:block;max-width:none;margin-top:14px">
+        <label class="field"><span>Email</span><input class="input" name="email" type="email" required /></label>
+        <label class="field"><span>Message</span><textarea class="input" name="message" required></textarea></label>
+        <button class="btn btn-primary btn-block">Send message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div><div class="logo" style="margin-bottom:10px"><i></i>NOVA</div><p>Curated jewellery for every celebration, shipped across India.</p></div>
+      <div><h4>Shop</h4><a href="#shop">All products</a><a href="#deals">Deals</a><a href="#features">Why NOVA</a></div>
+      <div><h4>Account</h4><a href="#" id="footLogin">Login / Signup</a><a href="#" id="footOrders">My orders</a></div>
+      <div><h4>Support</h4><a href="#contact">Contact us</a><a href="#">Shipping policy</a><a href="#">Returns</a></div>
+    </div>
+    <div class="foot-bottom"><span>© <span id="year"></span> NOVA Store. All rights reserved.</span><span id="apiState"></span></div>
+  </div>
+</footer>
+
+<button class="icon-btn back-top" id="backTop" title="Back to top">↑</button>
+
+<!-- CART DRAWER -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="cartDrawer">
+  <div class="drawer-head"><b id="drawerTitle">Your bag</b><button class="icon-btn" data-close>✕</button></div>
+  <div class="drawer-body" id="cartBody"></div>
+  <div class="drawer-foot" id="cartFoot"></div>
+</aside>
+
+<!-- AUTH MODAL -->
+<div class="modal" id="authModal">
+  <div class="modal-card">
+    <div class="modal-head"><div><h3 id="authTitle">Login to continue</h3><p id="authSub">You only need an account to place an order.</p></div>
+      <button class="icon-btn" data-close>✕</button></div>
+    <div class="tabs"><button class="active" data-tab="login">Login</button><button data-tab="signup">Sign up</button></div>
+    <form id="authForm">
+      <label class="field" id="nameField" style="display:none"><span>Full name</span><input class="input" name="name" /></label>
+      <label class="field"><span>Email</span><input class="input" name="email" type="text" required placeholder="you@email.com" /></label>
+      <label class="field"><span>Password</span><input class="input" name="password" type="password" required minlength="6" placeholder="min 6 characters" /></label>
+      <button class="btn btn-primary btn-block" id="authSubmit">Login</button>
+    </form>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px">Admin? Use your admin id and password on the Login tab — you'll be sent to the admin panel.</p>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal" id="prodModal"><div class="modal-card wide" id="prodBody"></div></div>
+
+<!-- ACCOUNT MODAL -->
+<div class="modal" id="accountModal"><div class="modal-card wide" id="accountBody"></div></div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal" id="checkoutModal"><div class="modal-card" id="checkoutBody"></div></div>
+
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/app.js"></script>
+</body>
+</html>
